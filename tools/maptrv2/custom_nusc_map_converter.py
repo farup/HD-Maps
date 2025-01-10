@@ -28,8 +28,6 @@ import networkx as nx
 sys.path.append('.')
 
 
-
-
 class CNuScenesMapExplorer(NuScenesMapExplorer):
     def __ini__(self, *args, **kwargs):
         super(self, CNuScenesMapExplorer).__init__(*args, **kwargs)

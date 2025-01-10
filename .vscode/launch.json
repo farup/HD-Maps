@@ -6,7 +6,7 @@
     "configurations": [
       
         {
-            "name": "Python: Debug Train MapTRv2 OldSplit ",
+            "name": "Python: Debug Train MapTRv2 MAptrv2split ",
             "type": "python",
             "request": "launch",
             "console": "integratedTerminal",
@@ -19,6 +19,29 @@
                 "29500",
                 "/cluster/home/terjenf/maptr_new/tools/train.py",
                 "/cluster/home/terjenf/maptr_new/projects/configs/maptrv2/maptrv2_nusc_r50_24ep.py",
+                "--launcher",
+                "pytorch",
+                "--gpus",
+                "1",
+                "--deterministic",
+                "--work-dir", 
+                "/cluster/home/terjenf/maptr_new/master_work"
+            ]
+        }, 
+        {
+            "name": "Python: Debug Train MapTRv2 Streammapsplit ",
+            "type": "python",
+            "request": "launch",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "module": "torch.distributed.launch",
+            "args": [
+                "--nproc_per_node",
+                "1",
+                "--master_port",
+                "29500",
+                "/cluster/home/terjenf/maptr_new/tools/train.py",
+                "/cluster/home/terjenf/maptr_new/projects/configs/maptrv2/maptrv2_nusc_r50_24ep_streammap_annotations.py",
                 "--launcher",
                 "pytorch",
                 "--gpus",
