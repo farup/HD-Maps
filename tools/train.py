@@ -21,6 +21,11 @@ from mmdet import __version__ as mmdet_version
 from mmdet3d import __version__ as mmdet3d_version
 #from mmdet3d.apis import train_model
 
+import sys 
+
+sys.path.append("/cluster/home/terjenf/maptr_new/")
+sys.path.append("/cluster/home/terjenf/maptr_new/projects")
+
 from mmdet3d.datasets import build_dataset
 from mmdet3d.models import build_model
 from mmdet3d.utils import collect_env, get_root_logger
