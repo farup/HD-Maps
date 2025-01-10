@@ -50,6 +50,39 @@
                 "--work-dir", 
                 "/cluster/home/terjenf/maptr_new/master_work"
             ]
-        }
+        },
+
+        {
+            "name": "Python: Debug Train MapTR tiny ",
+            "type": "python",
+            "request": "launch",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "module": "torch.distributed.launch",
+            "args": [
+                "--nproc_per_node",
+                "1",
+                "--master_port",
+                "29500",
+                "/cluster/home/terjenf/maptr_new/tools/train.py",
+                "/cluster/home/terjenf/maptr_new/projects/configs/maptr/maptr_tiny_r50_24e.py",
+                "--launcher",
+                "pytorch",
+                "--gpus",
+                "1",
+                "--deterministic",
+                "--work-dir", 
+                "/cluster/home/terjenf/maptr_new/master_work"
+            ]
+        }, 
+        {
+            "name": "Python: Debug Train MapTr Orignial Full Data",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false, 
+            "args": ["/cluster/home/terjenf/maptr_new/projects/configs/maptr/maptr_tiny_r50_24e.py"]
+        },
     ]
 }

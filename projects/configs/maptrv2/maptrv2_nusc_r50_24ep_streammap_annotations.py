@@ -205,7 +205,9 @@ model = dict(
                       weight=5),
             pc_range=point_cloud_range))))
 
-dataset_type = 'CustomNuScenesOfflineLocalMapDataset'
+# dataset_type = 'CustomNuScenesOfflineLocalMapDataset' # Original 
+dataset_type = 'CustomNuScenesLocalMapDataset'
+
 data_root = 'nuScenes/'
 file_client_args = dict(backend='disk')
 
@@ -257,7 +259,7 @@ data = dict(
         pipeline=train_pipeline,
         classes=class_names,
         modality=input_modality,
-        aux_seg=aux_seg_cfg,
+        #aux_seg=aux_seg_cfg,
         test_mode=False,
         use_valid_flag=True,
         bev_size=(bev_h_, bev_w_),

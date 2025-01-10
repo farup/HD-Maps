@@ -183,8 +183,8 @@ class NuScenesDataset(Custom3DDataset):
         Returns:
             list[dict]: List of annotations sorted by timestamps.
         """
-        #data = mmcv.load(ann_file) From MaptrV2
-        data = mmcv.load(ann_file, file_format='pkl') # From StreamMapNet
+        data = mmcv.load(ann_file) #From MaptrV2
+        #data = mmcv.load(ann_file, file_format='pkl') # From StreamMapNet
         data_infos = list(sorted(data['infos'], key=lambda e: e['timestamp']))
         data_infos = data_infos[::self.load_interval]
         self.metadata = data['metadata']
