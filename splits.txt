@@ -1,0 +1,10 @@
+
+
+
+
+Split generated from MapTracker: 
+/cluster/home/terjenf/maptracker/data/nuscenes/nuscenes_map_infos_train.pkl
+
+
+Gt generated from maptracker: 
+/cluster/home/terjenf/maptracker/data/nuscenes/nuscenes_map_infos_train_gt_tracks.pkl

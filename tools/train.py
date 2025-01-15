@@ -27,6 +27,18 @@ from mmdet.apis import set_random_seed
 from mmseg import __version__ as mmseg_version
 from mmcv.utils import TORCH_VERSION, digit_version
 
+
+
+import sys 
+
+sys.path.append("/cluster/home/terjenf/maptracker/")
+sys.path.append("/cluster/home/terjenf/maptracker/plugin/")
+sys.path.append("/cluster/home/terjenf/maptracker/plugin/datasets/")
+
+
+
+from plugin.datasets import NuscDataset
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a detector')
     parser.add_argument('config', help='train config file path')
