@@ -19,13 +19,15 @@ from os import path as osp
 
 from mmdet import __version__ as mmdet_version
 from mmdet3d import __version__ as mmdet3d_version
-from mmdet3d.apis import train_model
+#from mmdet3d.apis import train_model
 from mmdet3d.datasets import build_dataset
 from mmdet3d.models import build_model
 from mmdet3d.utils import collect_env, get_root_logger
 from mmdet.apis import set_random_seed
 from mmseg import __version__ as mmseg_version
 from mmcv.utils import TORCH_VERSION, digit_version
+
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a detector')
@@ -92,7 +94,6 @@ def parse_args():
     if args.options:
         warnings.warn('--options is deprecated in favor of --cfg-options')
         args.cfg_options = args.options
-
     return args
 
 
@@ -144,10 +145,19 @@ def main():
                 print(_module_path)
                 plg_lib = importlib.import_module(_module_path)
 
-    # work_dir is determined in this priority: CLI > segment in file > filename
+    config_name = cfg.filename.split("/")[-1].split(".")[0]
+    timestamp = time.strftime('%Y%m%d_%H%M%S', time.localtime())
+
     if args.work_dir is not None:
-        # update configs according to CLI args if args.work_dir is not None
-        cfg.work_dir = args.work_dir
+    # update configs according to CLI args if args.work_dir is not None
+    
+        if not os.path.exists(path_log_temp  := osp.join(args.work_dir, f'{config_name}_{timestamp}')):
+            os.makedirs(path_log_temp)
+
+        cfg.work_dir = path_log_temp
+
+    # work_dir is determined in this priority: CLI > segment in file > filename
+
     elif cfg.get('work_dir', None) is None:
         # use config filename as default work_dir if cfg.work_dir is None
         cfg.work_dir = osp.join('./work_dirs',
@@ -179,7 +189,7 @@ def main():
     # dump config
     cfg.dump(osp.join(cfg.work_dir, osp.basename(args.config)))
     # init the logger before other steps
-    timestamp = time.strftime('%Y%m%d_%H%M%S', time.localtime())
+    #timestamp = time.strftime('%Y%m%d_%H%M%S', time.localtime())
     log_file = osp.join(cfg.work_dir, f'{timestamp}.log')
     # specify logger name, if we still use 'mmdet', the output info will be
     # filtered and won't be saved in the log_file
