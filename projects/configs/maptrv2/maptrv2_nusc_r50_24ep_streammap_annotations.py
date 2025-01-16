@@ -208,7 +208,7 @@ model = dict(
 # dataset_type = 'CustomNuScenesOfflineLocalMapDataset' # Original 
 dataset_type = 'CustomNuScenesLocalMapDataset'
 
-data_root = 'nuScenes/'
+data_root = 'data/nuscenes/'
 file_client_args = dict(backend='disk')
 
 train_pipeline = [
@@ -255,7 +255,7 @@ data = dict(
     train=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=data_root + 'nuscenes_infos_temporal_train.pkl',
+        ann_file=data_root + 'nuscenes_map_infos_train_newsplit.pkl',
         pipeline=train_pipeline,
         classes=class_names,
         modality=input_modality,
@@ -275,7 +275,7 @@ data = dict(
     val=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=data_root + 'nuscenes_infos_temporal_val.pkl',
+        ann_file=data_root + 'nuscenes_map_infos_val_newsplit.pkl',
         map_ann_file=data_root + 'nuscenes_map_anns_val.json',
         pipeline=test_pipeline,  bev_size=(bev_h_, bev_w_),
         pc_range=point_cloud_range,
@@ -287,7 +287,7 @@ data = dict(
     test=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=data_root + 'nuscenes_infos_temporal_val.pkl',
+        ann_file=data_root + 'nuscenes_map_infos_val_newsplit.pkl',
         map_ann_file=data_root + 'nuscenes_map_anns_val.json',
         pipeline=test_pipeline, 
         bev_size=(bev_h_, bev_w_),

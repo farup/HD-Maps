@@ -4,7 +4,7 @@ class_names = [
     'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'
 ]
 dataset_type = 'CustomNuScenesOfflineLocalMapDataset'
-data_root = 'nuScenes/'
+data_root = 'data/nuscenes/'
 input_modality = dict(
     use_lidar=False,
     use_camera=True,
@@ -91,8 +91,8 @@ data = dict(
     workers_per_gpu=4,
     train=dict(
         type='CustomNuScenesOfflineLocalMapDataset',
-        data_root='nuScenes/',
-        ann_file='nuScenes/nuscenes_map_infos_temporal_train.pkl',
+        data_root='data/nuscenes/',
+        ann_file='data/nuscenes/nuscenes_map_infos_temporal_train.pkl',
         pipeline=[
             dict(type='LoadMultiViewImageFromFiles', to_float32=True),
             dict(type='RandomScaleImageMultiViewImage', scales=[0.5]),
@@ -153,7 +153,7 @@ data = dict(
         queue_length=1),
     val=dict(
         type='CustomNuScenesOfflineLocalMapDataset',
-        ann_file='nuScenes/nuscenes_map_infos_temporal_val.pkl',
+        ann_file='data/nuscenes/nuscenes_map_infos_temporal_val.pkl',
         pipeline=[
             dict(type='LoadMultiViewImageFromFiles', to_float32=True),
             dict(type='RandomScaleImageMultiViewImage', scales=[0.5]),
@@ -189,8 +189,8 @@ data = dict(
             use_external=True),
         test_mode=True,
         box_type_3d='LiDAR',
-        data_root='nuScenes/',
-        map_ann_file='nuScenes/nuscenes_map_anns_val.json',
+        data_root='data/nuscenes/',
+        map_ann_file='data/nuscenes/nuscenes_map_anns_val.json',
         bev_size=(200, 100),
         pc_range=[-15.0, -30.0, -10.0, 15.0, 30.0, 10.0],
         fixed_ptsnum_per_line=20,
@@ -200,8 +200,8 @@ data = dict(
         samples_per_gpu=1),
     test=dict(
         type='CustomNuScenesOfflineLocalMapDataset',
-        data_root='nuScenes/',
-        ann_file='nuScenes/nuscenes_map_infos_temporal_val.pkl',
+        data_root='data/nuscenes/',
+        ann_file='data/nuscenes/nuscenes_map_infos_temporal_val.pkl',
         pipeline=[
             dict(type='LoadMultiViewImageFromFiles', to_float32=True),
             dict(type='RandomScaleImageMultiViewImage', scales=[0.5]),
@@ -237,7 +237,7 @@ data = dict(
             use_external=True),
         test_mode=True,
         box_type_3d='LiDAR',
-        map_ann_file='nuScenes/nuscenes_map_anns_val.json',
+        map_ann_file='data/nuscenes/nuscenes_map_anns_val.json',
         bev_size=(200, 100),
         pc_range=[-15.0, -30.0, -10.0, 15.0, 30.0, 10.0],
         fixed_ptsnum_per_line=20,
