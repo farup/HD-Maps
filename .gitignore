@@ -34,6 +34,7 @@ MANIFEST
 
 master_work
 mmdetection3d
+slurm_outputs
 
 # Installer logs
 pip-log.txt

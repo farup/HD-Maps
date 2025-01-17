@@ -281,7 +281,7 @@ test_pipeline = [
 eval_config = dict(
     type='NuscDataset',
     data_root='./datasets/nuScenes',
-    ann_file='./datasets/nuScenes/nuscenes_map_infos_val.pkl',
+    ann_file='./datasets/nuScenes/nuscenes_map_infos_val_gt_tracks.pkl',
     meta=meta,
     roi_size=roi_size,
     cat2id=cat2id,
@@ -306,7 +306,7 @@ data = dict(
     train=dict(
         type='NuscDataset',
         data_root='./datasets/nuScenes',
-        ann_file='./datasets/nuScenes/nuscenes_map_infos_train.pkl',
+        ann_file='./datasets/nuScenes/nuscenes_map_infos_train_gt_tracks.pkl',
         meta=meta,
         roi_size=roi_size,
         cat2id=cat2id,
@@ -316,7 +316,7 @@ data = dict(
     val=dict(
         type='NuscDataset',
         data_root='./datasets/nuScenes',
-        ann_file='./datasets/nuScenes/nuscenes_map_infos_val.pkl',
+        ann_file='./datasets/nuScenes/nuscenes_map_infos_val_gt_tracks.pkl',
         meta=meta,
         roi_size=roi_size,
         cat2id=cat2id,
@@ -328,7 +328,7 @@ data = dict(
     test=dict(
         type='NuscDataset',
         data_root='./datasets/nuScenes',
-        ann_file='./datasets/nuScenes/nuscenes_map_infos_val.pkl',
+        ann_file='./datasets/nuScenes/nuscenes_map_infos_val_gt_tracks.pkl',
         meta=meta,
         roi_size=roi_size,
         cat2id=cat2id,
@@ -346,7 +346,7 @@ data = dict(
     nonshuffler_sampler=dict(type='DistributedSampler')
 )
 
-profile = False
+profile = True
 
 # optimizer
 optimizer = dict(

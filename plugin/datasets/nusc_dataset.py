@@ -41,7 +41,7 @@ class NuscDataset(BaseMapDataset):
         
         start_time = time()
         ann = mmcv.load(ann_file)
-        samples = ann[::self.interval]
+        samples = list(ann)[::self.interval]
         
         print(f'collected {len(samples)} samples in {(time() - start_time):.2f}s')
         self.samples = samples
