@@ -422,7 +422,7 @@ class CustomPointToMultiViewDepth(object):
             
             lidar2cam = torch.inverse(camego2global.matmul(cam2camego)).matmul(
                 lidarego2global.matmul(lidar2lidarego))
-            lidar2img = cam2img.matmul(lidar2cam)
+            lidar2img = cam2img.matmul(lidar2cam) #  (3x3 and 4x4)
 
             points_img = points_lidar.tensor[:, :3].matmul(
                 lidar2img[:3, :3].T.to(torch.float)) + lidar2img[:3, 3].to(torch.float).unsqueeze(0)

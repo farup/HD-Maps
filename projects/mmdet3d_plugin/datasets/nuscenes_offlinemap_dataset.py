@@ -1425,11 +1425,8 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
             ego2img_rt = (viewpad @ ego2cam_rt) # combines cam intrin and extrin
             ego2cam_rts.append(ego2cam_rt)
             ego2img_rts.append(ego2img_rt)
-
-            # camera intrinsics
-            camera_intrinsics = np.eye(4).astype(np.float32)
-            camera_intrinsics[:3, :3] = intrinsic
-            camera_intrinsics_list.append(intrinsic)
+       
+            camera_intrinsics_list.append(np.array(viewpad))
         
         input_dict = {
             'sample_idx': sample['token'], # 10796
@@ -1448,13 +1445,13 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
             'timestamp': sample['timestamp'],
 
             'lidar2ego': lidar2ego, 
-            'camera2ego': camera2ego, 
-            'camego2global': torch.from_numpy(np.array(camego2global_list)), 
+            'camera2ego': np.array(camera2ego, dtype=np.float32), 
+            'camego2global': torch.from_numpy(np.array(camego2global_list, dtype=np.float32)), 
            
             'img_filename': [c['img_fpath'] for c in sample['cams'].values()],
             'lidar2img': ego2img_rts, 
-            'camera_intrinsics': camera_intrinsics_list, 
-            'lidar2cam': lidar2cam_rts, 
+            'camera_intrinsics': np.array(camera_intrinsics_list, dtype=np.float64), 
+            'lidar2cam': np.array(lidar2cam_rts, dtype=np.float64), 
 
             # # intrinsics are 3x3 Ks
             # 'cam_intrinsics': [c['intrinsics'] for c in sample['cams'].values()],
@@ -1579,7 +1576,7 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
                     cam_info["sensor2ego_rotation"]
                 ).rotation_matrix
                 camera2ego[:3, 3] = cam_info["sensor2ego_translation"]
-                input_dict["camera2ego"].append(camera2ego)
+                input_dict["camera2ego"].append(camera2ego) # float32
 
                 # camego to global transform
                 camego2global = np.eye(4, dtype=np.float32)
