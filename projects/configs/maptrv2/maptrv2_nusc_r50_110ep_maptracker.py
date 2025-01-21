@@ -9,7 +9,7 @@ plugin_dir = 'projects/mmdet3d_plugin/'
 # If point cloud range is changed, the models should also change their point
 # cloud range accordingly
 # point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
-point_cloud_range = [-15.0, -30.0,-10.0, 15.0, 30.0, 10.0]
+point_cloud_range = [-15.0, -30.0,-10.0, 15.0, 30.0, 10.0] # X-axis [-15m ,15m], Y-axis [-30m, 30m] 
 voxel_size = [0.15, 0.15, 20.0]
 dbound=[1.0, 35.0, 0.5]
 
@@ -19,7 +19,6 @@ grid_config = {
     'z': [-10, 10, 20],        # useless
     'depth': [1.0, 35.0, 0.5], # useful
 }
-
 
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
@@ -31,6 +30,7 @@ class_names = [
 ]
 # map has classes: divider, ped_crossing, boundary
 map_classes = ['divider', 'ped_crossing','boundary']
+
 # fixed_ptsnum_per_line = 20
 # map_classes = ['divider',]
 num_vec=50

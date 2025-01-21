@@ -61,7 +61,7 @@ class Custom3DDataset(Dataset):
 
         self.CLASSES = self.get_classes(classes)
         self.cat2id = {name: i for i, name in enumerate(self.CLASSES)}
-        self.data_infos = self.load_annotations(self.ann_file)
+        self.data_infos = self.load_annotations(self.ann_file) # self.samples
 
         if pipeline is not None:
             self.pipeline = Compose(pipeline)
@@ -69,6 +69,8 @@ class Custom3DDataset(Dataset):
         # set group flag for the sampler
         if not self.test_mode:
             self._set_group_flag()
+
+       
 
     def load_annotations(self, ann_file):
         """Load annotations from ann_file.
@@ -78,6 +80,7 @@ class Custom3DDataset(Dataset):
 
         Returns:
             list[dict]: List of annotations.
+
         """
         return mmcv.load(ann_file)
 
