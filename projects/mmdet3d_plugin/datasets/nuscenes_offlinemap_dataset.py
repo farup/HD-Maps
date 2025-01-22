@@ -1088,28 +1088,6 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
         self.noise = noise
         self.noise_std = noise_std
 
-        self.maptracker = True
-
-    def load_annotations(self, ann_file):
-        """Load annotations from ann_file.
-
-        Args:
-            ann_file (str): Path of the annotation file.
-
-        Returns:
-            list[dict]: List of annotations sorted by timestamps.
-        """
-        start_time = time()
-        data = mmcv.load(ann_file) #From MaptrV2
-        #data = mmcv.load(ann_file, file_format='pkl') # From StreamMapNet
-        
-        print(f'collected {len(data)} samples in {(time() - start_time):.2f}s')
-     
-        data_infos = list(sorted(data, key=lambda e: e['timestamp']))
-        data_infos = data_infos[::self.load_interval]
-        # self.metadata = data['metadata']
-        # self.version = self.metadata['version']
-        return data_infos
     
     
     @classmethod
@@ -1289,8 +1267,6 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
                 frame_idx = input_dict['frame_idx']
             data_queue.insert(0, copy.deepcopy(example))
         return self.union2one(data_queue)
-
-
 
 
     def union2one(self, queue):
@@ -1648,6 +1624,22 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
         # sample_idx = inf[token]
         
         return input_dict
+    
+    def prepare_test_data_maptracker(self, index):
+        """Prepare data for testing.
+
+        Args:
+            index (int): Index for accessing the target data.
+
+        Returns:
+            dict: Testing data dict of the corresponding index.
+        """
+        input_dict = self.get_data_info_maptracker(index)
+        self.pre_pipeline(input_dict)
+        example = self.pipeline(input_dict)
+        if self.is_vis_on_test:
+            example = self.vectormap_pipeline(example, input_dict)
+        return example
 
     def prepare_test_data(self, index):
         """Prepare data for testing.
@@ -1671,10 +1663,13 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
             dict: Data dictionary of the corresponding index.
         """
         if self.test_mode:
-            return self.prepare_test_data(idx)
+            if self.maptrack_data_ann:
+                return self.prepare_test_data_maptracker(idx)
+            else: 
+                return self.prepare_test_data(idx)
         while True:
             # data = self.prepare_train_data(idx)
-            if self.maptracker: 
+            if self.maptrack_data_ann: 
                 data = self.prepare_train_data_maptracker(idx)
             else: 
                 data = self.prepare_train_data(idx)

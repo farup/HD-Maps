@@ -207,7 +207,7 @@ model = dict(
 
 dataset_type = 'CustomNuScenesOfflineLocalMapDataset'
 data_root = 'data/nuscenes/'
-maptrack_data_ann = True
+maptrack_data_ann = False
 file_client_args = dict(backend='disk')
 
 train_pipeline = [

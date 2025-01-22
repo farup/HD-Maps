@@ -1,5 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import mmcv
+
+from time import time
 import numpy as np
 import tempfile
 import warnings
@@ -45,6 +47,7 @@ class Custom3DDataset(Dataset):
     def __init__(self,
                  data_root,
                  ann_file,
+                 maptrack_data_ann,
                  pipeline=None,
                  classes=None,
                  modality=None,
@@ -59,6 +62,8 @@ class Custom3DDataset(Dataset):
         self.filter_empty_gt = filter_empty_gt
         self.box_type_3d, self.box_mode_3d = get_box_type(box_type_3d)
 
+        self.maptrack_data_ann = maptrack_data_ann
+
         self.CLASSES = self.get_classes(classes)
         self.cat2id = {name: i for i, name in enumerate(self.CLASSES)}
         self.data_infos = self.load_annotations(self.ann_file) # self.samples
@@ -69,8 +74,6 @@ class Custom3DDataset(Dataset):
         # set group flag for the sampler
         if not self.test_mode:
             self._set_group_flag()
-
-       
 
     def load_annotations(self, ann_file):
         """Load annotations from ann_file.

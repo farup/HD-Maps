@@ -5,6 +5,7 @@ import pyquaternion
 import tempfile
 from nuscenes.utils.data_classes import Box as NuScenesBox
 from os import path as osp
+from time import time
 
 from mmdet.datasets import DATASETS
 from ..core import show_result
@@ -113,6 +114,7 @@ class NuScenesDataset(Custom3DDataset):
 
     def __init__(self,
                  ann_file,
+                 maptrack_data_ann,
                  pipeline=None,
                  data_root=None,
                  classes=None,
@@ -123,7 +125,8 @@ class NuScenesDataset(Custom3DDataset):
                  filter_empty_gt=True,
                  test_mode=False,
                  eval_version='detection_cvpr_2019',
-                 use_valid_flag=False):
+                 use_valid_flag=False
+                 ):
         self.load_interval = load_interval
         self.use_valid_flag = use_valid_flag
         super().__init__(
@@ -134,7 +137,9 @@ class NuScenesDataset(Custom3DDataset):
             modality=modality,
             box_type_3d=box_type_3d,
             filter_empty_gt=filter_empty_gt,
-            test_mode=test_mode)
+            test_mode=test_mode,
+            maptrack_data_ann=maptrack_data_ann
+            )
 
         self.with_velocity = with_velocity
         self.eval_version = eval_version
@@ -183,13 +188,29 @@ class NuScenesDataset(Custom3DDataset):
         Returns:
             list[dict]: List of annotations sorted by timestamps.
         """
-        data = mmcv.load(ann_file) #From MaptrV2
-        #data = mmcv.load(ann_file, file_format='pkl') # From StreamMapNet
-        data_infos = list(sorted(data['infos'], key=lambda e: e['timestamp']))
-        data_infos = data_infos[::self.load_interval]
-        self.metadata = data['metadata']
-        self.version = self.metadata['version']
-        return data_infos
+
+        if self.maptrack_data_ann:
+            start_time = time()
+            data = mmcv.load(ann_file) #From MaptrV2
+            #data = mmcv.load(ann_file, file_format='pkl') # From StreamMapNet
+            
+            print(f'collected {len(data)} samples in {(time() - start_time):.2f}s')
+        
+            data_infos = list(sorted(data, key=lambda e: e['timestamp']))
+            data_infos = data_infos[::self.load_interval]
+            # self.metadata = data['metadata']
+            # self.version = self.metadata['version']
+            return data_infos
+        
+        else: 
+            data = mmcv.load(ann_file) #From MaptrV2
+            #data = mmcv.load(ann_file, file_format='pkl') # From StreamMapNet
+            data_infos = list(sorted(data['infos'], key=lambda e: e['timestamp']))
+            data_infos = data_infos[::self.load_interval]
+            self.metadata = data['metadata']
+            self.version = self.metadata['version']
+            return data_infos
+        
 
     def get_data_info(self, index):
         """Get data info according to the given index.
