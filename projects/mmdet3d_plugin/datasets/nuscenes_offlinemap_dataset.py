@@ -1090,7 +1090,6 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
 
         self.maptracker = True
 
-
     def load_annotations(self, ann_file):
         """Load annotations from ann_file.
 
@@ -1208,12 +1207,10 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
         frame_idx = input_dict['frame_idx']
         scene_token = input_dict['scene_token']
 
-
         self.pre_pipeline(input_dict)
 
         example = self.pipeline(input_dict)
         example = self.vectormap_pipeline(example,input_dict)
-
 
         if self.filter_empty_gt and \
                 (example is None or ~(example['gt_labels_3d']._data != -1).any()):
@@ -1236,7 +1233,6 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
             data_queue.insert(0, copy.deepcopy(example))
         return self.union2one(data_queue)
 
-
     def prepare_train_data(self, index):
         """
         Training data preparation.
@@ -1245,7 +1241,6 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
         Returns:
             dict: Training data dict of the corresponding index.
         """
-
         data_queue = []
 
         # temporal aug
@@ -1368,7 +1363,9 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
         lidar2global = ego2global @ lidar2ego
         lidar2global_translation = list(lidar2global[:3, 3]) # Translational movment of ego car from origin 
         lidar2global_translation = [float(x) for x in lidar2global_translation]
-        lidar2global_rotation = list(Quaternion(matrix=lidar2global).q) # Orientational movment of ego car from origin
+
+        rotation = Quaternion(matrix=lidar2global)
+        lidar2global_rotation = list(rotation.q) # Orientational movment of ego car from origin
 
         map_geoms = self.map_extractor.get_map_geom(location, lidar2global_translation, 
                 lidar2global_rotation)
@@ -1379,6 +1376,16 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
         lidar_shifted_e2g_translation[1] = lidar2global_translation[1]
         lidar_shifted_e2g_translation = lidar_shifted_e2g_translation.tolist()
         e2g_rotation = sample['e2g_rotation']
+
+        can_bus = np.zeros(18, dtype=np.float64)
+        can_bus[:3] = lidar_shifted_e2g_translation
+
+        patch_angle = quaternion_yaw(rotation) / np.pi * 180
+        if patch_angle < 0:
+            patch_angle += 360
+
+        can_bus[-2] = patch_angle / 180 * np.pi
+        can_bus[-1] = patch_angle
 
         lidar2global = np.eye(4)
         lidar2global[:3,:3] = Quaternion(e2g_rotation).rotation_matrix
@@ -1443,6 +1450,7 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
             'scene_token': sample['token'], # '59b397d0ad2d46c88c153b7498d1b0e8'
             'frame_idx':  None, # what
             'timestamp': sample['timestamp'],
+            'can_bus': can_bus, 
 
             'lidar2ego': lidar2ego, 
             'camera2ego': np.array(camera2ego, dtype=np.float32), 
@@ -1548,8 +1556,7 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
                 image_paths.append(cam_info['data_path'])
                 # obtain lidar to image transformation matrix
                 lidar2cam_r = np.linalg.inv(cam_info['sensor2lidar_rotation'])
-                lidar2cam_t = cam_info[
-                    'sensor2lidar_translation'] @ lidar2cam_r.T
+                lidar2cam_t = cam_info['sensor2lidar_translation'] @ lidar2cam_r.T
                 lidar2cam_rt = np.eye(4)
                 lidar2cam_rt[:3, :3] = lidar2cam_r.T
                 lidar2cam_rt[3, :3] = -lidar2cam_t
@@ -1613,7 +1620,6 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
             patch_angle += 360
         can_bus[-2] = patch_angle / 180 * np.pi
         can_bus[-1] = patch_angle
-
 
         lidar2ego = np.eye(4)
         lidar2ego[:3,:3] = Quaternion(input_dict['lidar2ego_rotation']).rotation_matrix
