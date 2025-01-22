@@ -347,6 +347,7 @@ data = dict(
 )
 
 profile = True
+profile_mem = False
 
 # optimizer
 optimizer = dict(
