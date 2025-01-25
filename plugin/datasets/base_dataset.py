@@ -38,16 +38,18 @@ class BaseMapDataset(Dataset):
                  work_dir=None,
                  eval_config=None,
                  test_mode=False,
+                 maptr_v2=False,
         ):
         super().__init__()
         self.ann_file = ann_file
         self.meta = meta
-        
+        self.maptr_v2 = maptr_v2
         self.classes = list(cat2id.keys())
         self.num_classes = len(self.classes)
         self.cat2id = cat2id
         self.interval = interval
         self.seq_split_num = seq_split_num
+
 
         self.load_annotations(self.ann_file)
         self.idx2token = {}
@@ -70,7 +72,55 @@ class BaseMapDataset(Dataset):
         if self.eval_config is not None:
             assert test_mode, "eval_config is valid only in test_mode"
         
-        self._set_sequence_group_flag()
+
+        if self.maptr_v2:
+            self._set_sequence_group_flag_maptrv2()
+
+        else: 
+            self._set_sequence_group_flag()
+
+    def _set_sequence_group_flag_maptrv2(self):
+        if self.seq_split_num == -1:
+            self.flag = np.arange(len(self.samples))
+            return
+
+        res = []
+
+        curr_sequence = -1
+        for idx in range(len(self.samples)):
+            if self.samples[idx]['prev'] == '': # prev in maptr 
+            # self.samples[idx].keys()
+            # dict_keys(['lidar_path', 'token', 'prev', 'next', 'can_bus', 
+            # 'frame_idx', 'sweeps', 'cams', 'map_location', 'scene_token',
+            # 'lidar2ego_translation', 'lidar2ego_rotation', 'ego2global_translation','ego2global_rotation', 'timestamp', 'annotation'])
+
+                curr_sequence += 1 # second time len(res)=40, 3. 80, 120, 
+            res.append(curr_sequence) # cumlative seq id ish
+
+        self.flag = np.array(res, dtype=np.int64)
+
+        if self.seq_split_num != 1:
+            bin_counts = np.bincount(self.flag)
+            new_flags = []
+            curr_new_flag = 0
+            for curr_flag in range(len(bin_counts)):
+                seq_length = int(round(bin_counts[curr_flag] / self.seq_split_num))
+                curr_sequence_length = list(range(0, bin_counts[curr_flag], seq_length)) + [bin_counts[curr_flag]]
+                
+                # if left one sample, put it into the last sequence
+                if curr_sequence_length[-1] - curr_sequence_length[-2] <= 1:
+                    curr_sequence_length = curr_sequence_length[:-2] + [curr_sequence_length[-1]]
+                
+                curr_sequence_length = np.array(curr_sequence_length)
+
+                for sub_seq_idx in (curr_sequence_length[1:] - curr_sequence_length[:-1]):
+                    for _ in range(sub_seq_idx):
+                        new_flags.append(curr_new_flag)
+                    curr_new_flag += 1
+
+            assert len(new_flags) == len(self.flag)
+            # assert len(np.bincount(new_flags)) == len(np.bincount(self.flag)) * self.seq_split_num
+            self.flag = np.array(new_flags, dtype=np.int64)
 
     def _set_sequence_group_flag(self):
         """
@@ -84,10 +134,14 @@ class BaseMapDataset(Dataset):
 
         curr_sequence = -1
         for idx in range(len(self.samples)):
-            if self.samples[idx]['prev'] == -1:
-                # new sequence
-                curr_sequence += 1
-            res.append(curr_sequence)
+            if self.samples[idx]['prev'] == -1: # prev in maptr ''
+            # self.samples[idx].keys()
+            # dict_keys(['lidar_path', 'token', 'cams', 'lidar2ego_translation', 
+            # 'lidar2ego_rotation', 'e2g_translation', 'e2g_rotation', 'timestamp', 
+            # 'location', 'scene_name', 'sample_idx', 'prev', 'next'])
+
+                curr_sequence += 1 # second time len(res)=40, 3. 80, 120, 
+            res.append(curr_sequence) # cumlative seq id ish
 
         self.flag = np.array(res, dtype=np.int64)
 
@@ -345,7 +399,13 @@ class BaseMapDataset(Dataset):
         Returns:
             dict: Data dictionary of the corresponding index.
         """
-        input_dict = self.get_sample(idx)
-        data = self.pipeline(input_dict)
+        if self.maptr_v2:
+            input_dict = self.get_data_info(idx) 
+            data = self.pipeline(input_dict)  
+                   
+        else:
+            input_dict = self.get_sample(idx)
+            data = self.pipeline(input_dict)
+           
         return data
 

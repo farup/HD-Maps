@@ -6,7 +6,7 @@ _base_ = [
 type = 'Mapper'
 plugin = True
 
-maptr_v2 = False
+maptr_v2 = True
 
 # plugin code dir
 plugin_dir = 'plugin/'
@@ -283,7 +283,7 @@ test_pipeline = [
 eval_config = dict(
     type='NuscDataset',
     data_root='./datasets/nuScenes',
-    ann_file='./datasets/nuScenes/nuscenes_map_infos_val.pkl',
+    ann_file='./datasets/nuScenes/nuscenes_map_infos_temporal_val.pkl',
     meta=meta,
     roi_size=roi_size,
     cat2id=cat2id,
@@ -301,14 +301,16 @@ eval_config = dict(
     interval=1,
 )
 
+
 # dataset configs
 data = dict(
     samples_per_gpu=batch_size,
     workers_per_gpu=4,
     train=dict(
         type='NuscDataset',
+        maptr_v2 = maptr_v2,
         data_root='./datasets/nuScenes',
-        ann_file='./datasets/nuScenes/nuscenes_map_infos_train.pkl',
+        ann_file='./datasets/nuScenes/nuscenes_map_infos_temporal_train.pkl',
         meta=meta,
         roi_size=roi_size,
         cat2id=cat2id,
@@ -317,8 +319,9 @@ data = dict(
     ),
     val=dict(
         type='NuscDataset',
+        maptr_v2 = maptr_v2, 
         data_root='./datasets/nuScenes',
-        ann_file='./datasets/nuScenes/nuscenes_map_infos_val.pkl',
+        ann_file='./datasets/nuScenes/nuscenes_map_infos_temporal_val.pkl',
         meta=meta,
         roi_size=roi_size,
         cat2id=cat2id,
@@ -329,8 +332,9 @@ data = dict(
     ),
     test=dict(
         type='NuscDataset',
+        maptr_v2 = maptr_v2, 
         data_root='./datasets/nuScenes',
-        ann_file='./datasets/nuScenes/nuscenes_map_infos_val.pkl',
+        ann_file='./datasets/nuScenes/nuscenes_map_infos_temporal_val.pkl',
         meta=meta,
         roi_size=roi_size,
         cat2id=cat2id,
@@ -348,24 +352,25 @@ data = dict(
     nonshuffler_sampler=dict(type='DistributedSampler')
 )
 
+
 profile = False
 
 # optimizer
 optimizer = dict(
     type='AdamW',
-    lr=5e-4 * (batch_size / 4),
+    lr=0.625e-4 * (batch_size / 4),
     paramwise_cfg=dict(
         custom_keys={
             'img_backbone': dict(lr_mult=0.1),
-        }),
-    weight_decay=1e-2)
+        }), # 5e-4 => 
+    weight_decay=0.00125)
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 
 # learning policy & schedule
 lr_config = dict(
     policy='CosineAnnealing',
     warmup='linear',
-    warmup_iters=500,
+    warmup_iters=4000,
     warmup_ratio=1.0 / 3,
     min_lr_ratio=3e-3)
 
@@ -374,7 +379,7 @@ find_unused_parameters = True #### when use checkpoint, find_unused_parameters m
 checkpoint_config = dict(interval=num_epochs_single_frame*num_iters_per_epoch)
 
 runner = dict(
-    type='IterBasedRunner', max_iters=num_epochs * num_iters_per_epoch)
+    maptr_v2=maptr_v2, type='IterBasedRunner', max_iters=num_epochs * num_iters_per_epoch)
 
 log_config = dict(
     interval=100,

@@ -97,7 +97,7 @@ class VectorizeMap(object):
         for label, geom_list in map_geoms.items():
             vectors[label] = []
             for geom in geom_list:
-                if geom.geom_type == 'LineString':
+                if geom.geom_type == 'LineString': # geom array in maptrv2
                     if self.simplify:
                         line = geom.simplify(0.2, preserve_topology=True)
                         line = np.array(line.coords)

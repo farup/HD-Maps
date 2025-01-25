@@ -32,6 +32,7 @@ MANIFEST
 *.manifest
 *.spec
 
+new_master_work
 master_work
 mmdetection3d
 slurm_outputs

@@ -238,6 +238,12 @@ class StreamMapNet(BaseMapper):
         valid_idx = [i for i in range(bs) if num_gts[i] > 0]
         assert len(valid_idx) == bs # make sure every sample has gts
 
+        # valid_idx
+        # [0, 2, 3]
+        
+        # vectors[0].keys()
+        # dict_keys([1, 0, 2])
+
         gts = []
         all_labels_list = []
         all_lines_list = []
