@@ -1027,7 +1027,7 @@ class VectorizedLocalMap(object):
 
 
 @DATASETS.register_module()
-class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
+class CustomNuScenesOfflineLocalMapDatasetMapTracker(CustomNuScenesDataset):
     r"""NuScenes Dataset.
 
     This datset add static map elements
@@ -1078,6 +1078,8 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
         self.fixed_num = fixed_ptsnum_per_line
         self.eval_use_same_gt_sample_num_flag = eval_use_same_gt_sample_num_flag
         self.aux_seg = aux_seg
+
+        
         self.vector_map = VectorizedLocalMap(canvas_size=bev_size,
                                              patch_size=self.patch_size, 
                                              map_classes=self.MAPCLASSES, 
@@ -1585,8 +1587,6 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
 
         # if not self.test_mode:
         #     # annos = self.get_ann_info(index)
-
-        
         input_dict['ann_info'] = info['annotation']
 
         rotation = Quaternion(input_dict['ego2global_rotation'])
@@ -1666,16 +1666,9 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
             dict: Data dictionary of the corresponding index.
         """
         if self.test_mode:
-            if self.maptrack_data_ann:
-                return self.prepare_test_data_maptracker(idx)
-            else: 
-                return self.prepare_test_data(idx)
+            return self.prepare_test_data(idx)
         while True:
-            # data = self.prepare_train_data(idx)
-            if self.maptrack_data_ann: 
-                data = self.prepare_train_data_maptracker(idx)
-            else: 
-                data = self.prepare_train_data(idx)
+            data = self.prepare_train_data(idx)
             if data is None:
                 idx = self._rand_another(idx)
                 continue

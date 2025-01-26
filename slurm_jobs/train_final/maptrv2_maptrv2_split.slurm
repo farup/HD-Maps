@@ -8,9 +8,9 @@
 #SBATCH --constraint=gpu80g
 
 #SBATCH --mem=50G              
-#SBATCH --output=/cluster/home/terjenf/maptr_new/slurm_outputs/maptrv2_maptrv2_split.out    # Log file
+#SBATCH --output=/cluster/home/terjenf/maptr_new/slurm_outputs/maptrv2_maptrv2_split_24ep.out    # Log file
 
-#SBATCH --job-name="Maptrv2 Maptrv2 Split"
+#SBATCH --job-name="Maptrv2 Maptrv2-Split"
 #SBATCH --mail-user=terjenf@stud.ntnu.no
 #SBATCH --mail-type=ALL
 
@@ -25,4 +25,4 @@ module load  Anaconda3/2023.09-0
 
 conda activate maptr_new
 
-python -m torch.distributed.launch --nproc_per_node 1 --master_port 29502 /cluster/home/terjenf/maptr_new/tools/train.py /cluster/home/terjenf/maptr_new/projects/configs/maptrv2/maptrv2_nusc_r50_110ep_maptrv2.py --launcher pytorch --gpus 1 --work-dir /cluster/home/terjenf/maptracker/master_work
+python /cluster/home/terjenf/maptr_new/tools/train.py /cluster/home/terjenf/maptr_new/projects/configs/maptrv2/maptrv2_nusc_r50_24ep_maptrv2_scaled_hyp.py --work-dir /cluster/home/terjenf/maptr_new/final_Work

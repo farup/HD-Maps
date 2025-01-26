@@ -192,19 +192,18 @@ class NuScenesDataset(Custom3DDataset):
         if self.maptrack_data_ann:
             start_time = time()
             data = mmcv.load(ann_file) #From MaptrV2
-            #data = mmcv.load(ann_file, file_format='pkl') # From StreamMapNet
+          
             
             print(f'collected {len(data)} samples in {(time() - start_time):.2f}s')
         
             data_infos = list(sorted(data, key=lambda e: e['timestamp']))
             data_infos = data_infos[::self.load_interval]
-            # self.metadata = data['metadata']
-            # self.version = self.metadata['version']
+        
             return data_infos
         
         else: 
             data = mmcv.load(ann_file) #From MaptrV2
-            #data = mmcv.load(ann_file, file_format='pkl') # From StreamMapNet
+    
             data_infos = list(sorted(data['infos'], key=lambda e: e['timestamp']))
             data_infos = data_infos[::self.load_interval]
             self.metadata = data['metadata']

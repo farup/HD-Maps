@@ -207,8 +207,7 @@ model = dict(
 
 dataset_type = 'CustomNuScenesOfflineLocalMapDataset'
 data_root = 'data/nuscenes/'
-maptrack_data_ann = False
-
+maptrack_data_ann = True
 torch_profile = True
 profile_mem = False
 
@@ -259,7 +258,7 @@ data = dict(
         type=dataset_type,
         data_root=data_root,
         maptrack_data_ann=maptrack_data_ann,
-        ann_file=data_root + 'nuscenes_map_infos_temporal_train.pkl',
+        ann_file=data_root + 'nuscenes_map_infos_train.pkl',
         pipeline=train_pipeline,
         classes=class_names,
         modality=input_modality,
@@ -280,7 +279,7 @@ data = dict(
         type=dataset_type,
         data_root=data_root,
         maptrack_data_ann=maptrack_data_ann,
-        ann_file=data_root + 'nuscenes_map_infos_temporal_val.pkl',
+        ann_file=data_root + 'nuscenes_map_infos_val.pkl',
         map_ann_file=data_root + 'nuscenes_map_anns_val.json',
         pipeline=test_pipeline,  bev_size=(bev_h_, bev_w_),
         pc_range=point_cloud_range,
@@ -293,7 +292,7 @@ data = dict(
         type=dataset_type,
         data_root=data_root,
         maptrack_data_ann=maptrack_data_ann,
-        ann_file=data_root + 'nuscenes_map_infos_temporal_val.pkl',
+        ann_file=data_root + 'nuscenes_map_infos_val.pkl',
         map_ann_file=data_root + 'nuscenes_map_anns_val.json',
         pipeline=test_pipeline, 
         bev_size=(bev_h_, bev_w_),
@@ -325,8 +324,8 @@ lr_config = dict(
     warmup_iters=500,
     warmup_ratio=1.0 / 3,
     min_lr_ratio=1e-3)
-total_epochs = 110
-evaluation = dict(interval=2, pipeline=test_pipeline, metric='chamfer',
+total_epochs = 24
+evaluation = dict(interval=1, pipeline=test_pipeline, metric='chamfer',
                   save_best='NuscMap_chamfer/mAP', rule='greater')
 # total_epochs = 50
 # evaluation = dict(interval=1, pipeline=test_pipeline)

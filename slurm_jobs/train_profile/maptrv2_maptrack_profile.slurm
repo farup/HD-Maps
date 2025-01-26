@@ -7,8 +7,8 @@
 #SBATCH --gres=gpu:1 
 #SBATCH --constraint=gpu80g
 
-#SBATCH --mem=200G              # 5 gigabytes memory
-#SBATCH --output=/cluster/home/terjenf/maptr_new/slurm_outputs/maptrv2_maptracker_split.out    # Log file
+#SBATCH --mem=70G              # 5 gigabytes memory
+#SBATCH --output=/cluster/home/terjenf/maptr_new/slurm_outputs/maptrv2_nusc_r50_1ep_maptracker_mem_profile.out    # Log file
 
 #SBATCH --job-name="Maptrv2 Maptracker Split"
 #SBATCH --mail-user=terjenf@stud.ntnu.no
@@ -25,4 +25,4 @@ module load  Anaconda3/2023.09-0
 
 conda activate maptr_new
 
-python /cluster/home/terjenf/maptr_new/tools/train.py /cluster/home/terjenf/maptr_new/projects/configs/maptrv2/maptrv2_nusc_r50_1ep_maptracker.py --work-dir /cluster/home/terjenf/maptracker/master_work
+python /cluster/home/terjenf/maptr_new/tools/train.py /cluster/home/terjenf/maptr_new/projects/configs/maptrv2/maptrv2_nusc_r50_1ep_maptrv2_profile_mem.py --work-dir /cluster/home/terjenf/maptr_new/master_work
