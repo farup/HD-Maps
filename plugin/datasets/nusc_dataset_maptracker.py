@@ -1,5 +1,5 @@
 from.base_dataset import BaseMapDataset
-from .map_utils.nuscmap_extractor import NuscMapExtractor
+from .map_utils.nuscmap_extractor_maptracker import NuscMapExtractor
 from mmdet.datasets import DATASETS
 import numpy as np
 from .visualize.renderer import Renderer
@@ -15,7 +15,7 @@ import torch
 
 
 @DATASETS.register_module()
-class NuscDataset(BaseMapDataset):
+class NuscDatasetMapTracker(BaseMapDataset):
     """NuScenes map dataset class.
 
     Args:
@@ -48,31 +48,15 @@ class NuscDataset(BaseMapDataset):
 
         """
 
-        if self.maptr_v2:
-            
-            data = mmcv.load(ann_file) #From MaptrV2
-    
-            data_infos = list(sorted(data['infos'], key=lambda e: e['timestamp']))
-            data_infos = data_infos[::self.interval]
-            self.metadata = data['metadata']
-            self.version = self.metadata['version']
-            self.samples = data_infos
-            print("Ann collected!")
+        start_time = time()
+        ann = mmcv.load(ann_file)
+        samples = list(ann)[::self.interval]
 
-        else:
-
-            start_time = time()
-            ann = mmcv.load(ann_file)
-            samples = list(ann)[::self.interval]
-            
-            print(f'collected {len(samples)} samples in {(time() - start_time):.2f}s')
-            self.samples = samples
-
-  
-
-
+        print(f'collected {len(samples)} samples in {(time() - start_time):.2f}s')
+        self.samples = samples
 
     def get_sample(self, idx):
+
         """Get data sample. For each sample, map extractor will be applied to extract 
         map elements. 
 
@@ -92,10 +76,15 @@ class NuscDataset(BaseMapDataset):
         # [332.0797577474775, 659.4188573738066, 0.0]
 
         # sample['e2g_rotation']
-        # [-0.14457762634660634, 0.007687923603545458, 0.001974063238896858, -0.9894616257667479]   
-             
+        # [-0.14457762634660634, 0.007687923603545458, 0.001974063238896858, -0.9894616257667479]  
+        # 
+
+        # ----------------------------- 
+
         map_geoms = self.map_extractor.get_map_geom(location, sample['e2g_translation'], 
-                sample['e2g_rotation']) # NuscMapExtractor.get_map_geom
+            sample['e2g_rotation']) # = VectorizedLocalMap.gen_vectorized_samples 
+        
+        # -----------------------------
 
         # count = {'divider': [0,0], 'ped_crossing': [0,0], 'boundary': [0,0], 'drivable_area': [0,0]}
         map_label2geom = {}
@@ -165,15 +154,6 @@ class NuscDataset(BaseMapDataset):
         location = info['map_location']
 
     
-        # input_dict['sweeps'][0].keys()
-        # dict_keys(['data_path', 'type', 'sample_data_token', 'sensor2ego_translation', 'sensor2ego_rotation', 'ego2global_translation', 'ego2global_rotation', 'timestamp', 'sensor2lidar_rotation', 'sensor2lidar_translation'])
-
-        # input_dict['pts_filename']
-        # './data/nuscenes/samples/LIDAR_TOP/n015-2018-09-27-15-33-17+0800__LIDAR_TOP__1538033900198208.pcd.bin'
-
-        # input_dict['can_bus'].shape (18,)
-        # lidar to ego transform
-        
         lidar2ego = np.eye(4).astype(np.float32)
         lidar2ego[:3, :3] = Quaternion(info["lidar2ego_rotation"]).rotation_matrix
         lidar2ego[:3, 3] = info["lidar2ego_translation"]
@@ -187,9 +167,8 @@ class NuscDataset(BaseMapDataset):
         cam_extrinsics = []
 
         ego2img_rts = []
-
-        
         camego2global_list = []
+        
         for cam_type, cam_info in info['cams'].items():
 
 
@@ -209,8 +188,6 @@ class NuscDataset(BaseMapDataset):
             # elif self.noise == 'translation':
             #     lidar2cam_rt_t = add_translation_noise(
             #         lidar2cam_rt_t, std=self.noise_std)
-
-
 
             intrinsic = cam_info['cam_intrinsic']
         

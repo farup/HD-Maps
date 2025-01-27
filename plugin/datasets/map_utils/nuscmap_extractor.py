@@ -36,6 +36,7 @@ class NuscMapExtractor(object):
     def _union_ped(self, ped_geoms: List[Polygon]) -> List[Polygon]:
         ''' merge close ped crossings.
         
+
         Args:
             ped_geoms (list): list of Polygon
         
@@ -83,7 +84,7 @@ class NuscMapExtractor(object):
         for p in final_pgeom:
             results.extend(split_collections(p))
         return results
-        
+    # called from nusc_dataset    
     def get_map_geom(self, 
                      location: str, 
                      e2g_translation: Union[List, NDArray],
@@ -114,7 +115,7 @@ class NuscMapExtractor(object):
         
         all_dividers = []
         for line in lane_dividers + road_dividers:
-            all_dividers += split_collections(line)
+            all_dividers += split_collections(line) # split mulit-geoms (?) to list and check valid and not empty 
 
         # get ped crossings
         ped_crossings = []

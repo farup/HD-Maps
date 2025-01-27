@@ -282,8 +282,8 @@ test_pipeline = [
 # DO NOT CHANGE
 eval_config = dict(
     type='NuscDataset',
-    data_root='./datasets/nuScenes',
-    ann_file='./datasets/nuScenes/nuscenes_map_infos_val.pkl',
+    data_root='./datasets/nuscenes',
+    ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
     meta=meta,
     roi_size=roi_size,
     cat2id=cat2id,
@@ -307,8 +307,8 @@ data = dict(
     workers_per_gpu=4,
     train=dict(
         type='NuscDataset',
-        data_root='./datasets/nuScenes',
-        ann_file='./datasets/nuScenes/nuscenes_map_infos_train.pkl',
+        data_root='./datasets/nuscenes',
+        ann_file='./datasets/nuscenes/nuscenes_map_infos_train_newsplit.pkl',
         meta=meta,
         roi_size=roi_size,
         cat2id=cat2id,
@@ -317,8 +317,8 @@ data = dict(
     ),
     val=dict(
         type='NuscDataset',
-        data_root='./datasets/nuScenes',
-        ann_file='./datasets/nuScenes/nuscenes_map_infos_val.pkl',
+        data_root='./datasets/nuscenes',
+        ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
         meta=meta,
         roi_size=roi_size,
         cat2id=cat2id,
@@ -329,8 +329,8 @@ data = dict(
     ),
     test=dict(
         type='NuscDataset',
-        data_root='./datasets/nuScenes',
-        ann_file='./datasets/nuScenes/nuscenes_map_infos_val.pkl',
+        data_root='./datasets/nuscenes',
+        ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
         meta=meta,
         roi_size=roi_size,
         cat2id=cat2id,
@@ -353,19 +353,19 @@ profile = False
 # optimizer
 optimizer = dict(
     type='AdamW',
-    lr=0.625e-4 * (batch_size / 4),
+    lr=5e-4 * (batch_size / 4),
     paramwise_cfg=dict(
         custom_keys={
             'img_backbone': dict(lr_mult=0.1),
-        }), # 5e-4 => 
-    weight_decay=0.00125)
+        }),
+    weight_decay=1e-2)
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 
 # learning policy & schedule
 lr_config = dict(
     policy='CosineAnnealing',
     warmup='linear',
-    warmup_iters=4000,
+    warmup_iters=500,
     warmup_ratio=1.0 / 3,
     min_lr_ratio=3e-3)
 

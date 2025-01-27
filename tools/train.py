@@ -27,6 +27,7 @@ from mmdet.apis import set_random_seed
 from mmseg import __version__ as mmseg_version
 from mmcv.utils import TORCH_VERSION, digit_version
 
+
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 def parse_args():
@@ -133,7 +134,9 @@ def main():
                 if not isinstance(plugin_dirs,list):
                     plugin_dirs = [plugin_dirs,]
                 for plugin_dir in plugin_dirs:
-                    import_path(plugin_dir)
+                    plg_lib = import_path(plugin_dir)
+                    print("hei")
+                    from plugin.datasets.nusc_dataset_maptracker import NuscDatasetMapTracker
                 
             else:
                 # import dir is the dirpath for the config file
