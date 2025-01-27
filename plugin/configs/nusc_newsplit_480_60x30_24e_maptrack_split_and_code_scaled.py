@@ -17,7 +17,7 @@ img_h = 480
 img_w = 800
 img_size = (img_h, img_w)
 
-num_gpus = 8
+num_gpus = 1
 batch_size = 4
 num_iters_per_epoch = 27846 // (num_gpus * batch_size)
 num_epochs = 24
@@ -279,9 +279,9 @@ test_pipeline = [
 # configs for evaluation code
 # DO NOT CHANGE
 eval_config = dict(
-    type='NuscDataset',
-    data_root='./datasets/nuScenes',
-    ann_file='./datasets/nuScenes/nuscenes_map_infos_val_gt_tracks.pkl',
+    type='NuscDatasetMapTracker',
+    data_root='./datasets/nuscenes',
+    ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
     meta=meta,
     roi_size=roi_size,
     cat2id=cat2id,
@@ -304,9 +304,9 @@ data = dict(
     samples_per_gpu=batch_size,
     workers_per_gpu=4,
     train=dict(
-        type='NuscDataset',
-        data_root='./datasets/nuScenes',
-        ann_file='./datasets/nuScenes/nuscenes_map_infos_train_gt_tracks.pkl',
+        type='NuscDatasetMapTracker',
+        data_root='./datasets/nuscenes',
+        ann_file='./datasets/nuscenes/nuscenes_map_infos_train_newsplit.pkl',
         meta=meta,
         roi_size=roi_size,
         cat2id=cat2id,
@@ -314,9 +314,9 @@ data = dict(
         seq_split_num=1,
     ),
     val=dict(
-        type='NuscDataset',
-        data_root='./datasets/nuScenes',
-        ann_file='./datasets/nuScenes/nuscenes_map_infos_val_gt_tracks.pkl',
+        type='NuscDatasetMapTracker',
+        data_root='./datasets/nuscenes',
+        ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
         meta=meta,
         roi_size=roi_size,
         cat2id=cat2id,
@@ -326,9 +326,9 @@ data = dict(
         seq_split_num=1,
     ),
     test=dict(
-        type='NuscDataset',
-        data_root='./datasets/nuScenes',
-        ann_file='./datasets/nuScenes/nuscenes_map_infos_val_gt_tracks.pkl',
+        type='NuscDatasetMapTracker',
+        data_root='./datasets/nuscenes',
+        ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
         meta=meta,
         roi_size=roi_size,
         cat2id=cat2id,
@@ -346,25 +346,24 @@ data = dict(
     nonshuffler_sampler=dict(type='DistributedSampler')
 )
 
-profile = True
-profile_mem = False
+profile = False
 
 # optimizer
 optimizer = dict(
     type='AdamW',
-    lr=5e-4 * (batch_size / 4),
+    lr=0.625e-4 * (batch_size / 4),
     paramwise_cfg=dict(
         custom_keys={
             'img_backbone': dict(lr_mult=0.1),
-        }),
-    weight_decay=1e-2)
+        }), # 5e-4 => 
+    weight_decay=0.00125)
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 
 # learning policy & schedule
 lr_config = dict(
     policy='CosineAnnealing',
     warmup='linear',
-    warmup_iters=500,
+    warmup_iters=4000,
     warmup_ratio=1.0 / 3,
     min_lr_ratio=3e-3)
 

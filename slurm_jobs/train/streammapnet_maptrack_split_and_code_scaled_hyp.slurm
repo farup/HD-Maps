@@ -9,9 +9,9 @@
 #SBATCH --constraint=gpu80g
 
 #SBATCH --mem=50G              # 5 gigabytes memory
-#SBATCH --output=/cluster/home/terjenf/StreamMapNet/slurm_outputs/streammapnet_maptrack_split_scaled_hyp.out    # Log file
+#SBATCH --output=/cluster/home/terjenf/StreamMapNet/slurm_outputs/streammapnet_maptrack_split_and_code_scaled_hyp.out    # Log file
 
-#SBATCH --job-name="SteamMapNet Maptrack Split Scaled hyp"
+#SBATCH --job-name="SteamMapNet Maptrack SplitandCode Scaled hyp"
 #SBATCH --mail-user=terjenf@stud.ntnu.no
 #SBATCH --mail-type=ALL
 
@@ -26,4 +26,4 @@ module load  Anaconda3/2023.09-0
 
 conda activate streammapnet
 
-python -m torch.distributed.launch --nproc_per_node 1 --master_port 29520 /cluster/home/terjenf/StreamMapNet/tools/train.py /cluster/home/terjenf/StreamMapNet/plugin/configs/nusc_newsplit_480_60x30_24e_maptrack_split_scaled_hyp.py --launcher pytorch --gpus 1 --work-dir /cluster/home/terjenf/StreamMapNet/final_work
+python -m torch.distributed.launch --nproc_per_node 1 --master_port 29520 /cluster/home/terjenf/StreamMapNet/tools/train.py /cluster/home/terjenf/StreamMapNet/plugin/configs/nusc_newsplit_480_60x30_24e_maptrack_split_and_code_scaled.py --launcher pytorch --gpus 1 --work-dir /cluster/home/terjenf/StreamMapNet/final_work
