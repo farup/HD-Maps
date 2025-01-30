@@ -5,7 +5,7 @@ import numpy as np
 from nuscenes.map_expansion.map_api import NuScenesMap, NuScenesMapExplorer
 from nuscenes.eval.common.utils import quaternion_yaw
 from pyquaternion import Quaternion
-from .utils_ import split_collections, get_drivable_area_contour, get_ped_crossing_contour
+from .utils_maptracker import split_collections, get_drivable_area_contour, get_ped_crossing_contour
 from numpy.typing import NDArray
 from typing import Dict, List, Tuple, Union
 
@@ -22,6 +22,7 @@ class NuscMapExtractor(object):
         roi_size (tuple or list): bev range
     """
     def __init__(self, data_root: str, roi_size: Union[List, Tuple]) -> None:
+
         self.roi_size = roi_size
         self.MAPS = ['boston-seaport', 'singapore-hollandvillage',
                      'singapore-onenorth', 'singapore-queenstown']
@@ -44,6 +45,7 @@ class NuscMapExtractor(object):
 
         vector_map_maptr = VectorizedLocalMap(self.nusc_maps[location], self.map_explorer[location],
                                 patch_size_lidar_coord, patch_size_ego_coord, map_classes=['divider','ped_crossing','boundary'])
+        
         map_annos = vector_map_maptr.gen_vectorized_samples(e2g_translation, e2g_rotation)
         
         return dict(
@@ -95,9 +97,9 @@ class VectorizedLocalMap(object):
         map_pose = lidar2global_translation[:2]
         rotation = Quaternion(lidar2global_rotation)
         # import ipdb;ipdb.set_trace()
-        patch_box = (map_pose[0], map_pose[1], self.patch_size[0], self.patch_size[1])
+        patch_box = (map_pose[0], map_pose[1], self.patch_size[0], self.patch_size[1]) # (0.943713, 0.0, 60, 30)
         
-        patch_angle = quaternion_yaw(rotation) / np.pi * 180
+        patch_angle = quaternion_yaw(rotation) / np.pi * 180 # -89.88349999999997
         map_dict = {'divider':[],'ped_crossing':[],'boundary':[],'centerline':[]}
         vectors = []
 

@@ -114,7 +114,6 @@ class NuScenesDataset(Custom3DDataset):
 
     def __init__(self,
                  ann_file,
-                 maptrack_data_ann,
                  pipeline=None,
                  data_root=None,
                  classes=None,
@@ -137,8 +136,7 @@ class NuScenesDataset(Custom3DDataset):
             modality=modality,
             box_type_3d=box_type_3d,
             filter_empty_gt=filter_empty_gt,
-            test_mode=test_mode,
-            maptrack_data_ann=maptrack_data_ann
+            test_mode=test_mode
             )
 
         self.with_velocity = with_velocity
@@ -189,26 +187,13 @@ class NuScenesDataset(Custom3DDataset):
             list[dict]: List of annotations sorted by timestamps.
         """
 
-        if self.maptrack_data_ann:
-            start_time = time()
-            data = mmcv.load(ann_file) #From MaptrV2
-          
-            
-            print(f'collected {len(data)} samples in {(time() - start_time):.2f}s')
-        
-            data_infos = list(sorted(data, key=lambda e: e['timestamp']))
-            data_infos = data_infos[::self.load_interval]
-        
-            return data_infos
-        
-        else: 
-            data = mmcv.load(ann_file) #From MaptrV2
-    
-            data_infos = list(sorted(data['infos'], key=lambda e: e['timestamp']))
-            data_infos = data_infos[::self.load_interval]
-            self.metadata = data['metadata']
-            self.version = self.metadata['version']
-            return data_infos
+        data = mmcv.load(ann_file) #From MaptrV2
+
+        data_infos = list(sorted(data['infos'], key=lambda e: e['timestamp']))
+        data_infos = data_infos[::self.load_interval]
+        self.metadata = data['metadata']
+        self.version = self.metadata['version']
+        return data_infos
         
 
     def get_data_info(self, index):

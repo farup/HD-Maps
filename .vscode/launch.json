@@ -4,9 +4,37 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        {
+            "name": "Python Debugger:Maptr File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "/cluster/home/terjenf/maptr_new/tools/train.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "/cluster/home/terjenf/maptr_new/projects/configs/maptrv2/maptrv2_nusc_r50_24ep_maptracker_custom_split_and_code.py",
+                "--work-dir", 
+                "/cluster/home/terjenf/maptr_new/master_work"
+            ]
+
+        },
+        {
+            "name": "Python Debugger:Maptr 1 cam",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "/cluster/home/terjenf/maptr_new/tools/train.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "/cluster/home/terjenf/maptr_new/projects/configs/maptrv2/maptrv2_nusc_r50_24ep_scaled_maptracker_custom_split_and_code_1cam.py",
+                "--work-dir", 
+                "/cluster/home/terjenf/maptr_new/master_work"
+            ]
+
+        },
       
         {
-            "name": "Python: Debug Train MapTRv2 Split ",
+            "name": "Python: Debug Train Maptracksplit Split ",
             "type": "python",
             "request": "launch",
             "console": "integratedTerminal",
@@ -16,9 +44,9 @@
                 "--nproc_per_node",
                 "1",
                 "--master_port",
-                "29500",
+                "29539",
                 "/cluster/home/terjenf/maptr_new/tools/train.py",
-                "/cluster/home/terjenf/maptr_new/projects/configs/maptrv2/maptrv2_nusc_r50_24ep_maptrv2.py",
+                "/cluster/home/terjenf/maptr_new/projects/configs/maptrv2/maptrv2_nusc_r50_24ep_maptracker_custom_split_and_code.py",
                 "--launcher",
                 "pytorch",
                 "--gpus",
@@ -29,7 +57,30 @@
             ]
         }, 
         {
-            "name": "Python: Debug Train MapTRv2 MapTRackSplit Profile",
+            "name": "Python: Debug Train MapTRv2 CustomMapTRackSplit",
+            "type": "python",
+            "request": "launch",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "module": "torch.distributed.launch",
+            "args": [
+                "--nproc_per_node",
+                "1",
+                "--master_port",
+                "29531",
+                "/cluster/home/terjenf/maptr_new/tools/train.py",
+                "/cluster/home/terjenf/maptr_new/projects/configs/maptrv2/maptrv2_nusc_r50_24ep_maptracker_custom_split_and_code.py",
+                "--launcher",
+                "pytorch",
+                "--gpus",
+                "1",
+                "--deterministic",
+                "--work-dir", 
+                "/cluster/home/terjenf/maptr_new/master_work"
+            ]
+        }, 
+        {
+            "name": "Python: Debug Train MapTRv2 MapTRackSplit",
             "type": "python",
             "request": "launch",
             "console": "integratedTerminal",
@@ -41,7 +92,7 @@
                 "--master_port",
                 "29501",
                 "/cluster/home/terjenf/maptr_new/tools/train.py",
-                "/cluster/home/terjenf/maptr_new/projects/configs/maptrv2/maptrv2_nusc_r50_1ep_maptracker_profile.py",
+                "/cluster/home/terjenf/maptr_new/projects/configs/maptrv2/maptrv2_nusc_r50_24ep_maptracker_split_and_code.py",
                 "--launcher",
                 "pytorch",
                 "--gpus",

@@ -6,6 +6,7 @@
 import random
 import warnings
 
+import json
 import numpy as np
 import torch
 import torch.distributed as dist
@@ -178,6 +179,15 @@ def custom_train_detector(model,
         eval_cfg['by_epoch'] = cfg.runner['type'] != 'IterBasedRunner'
         eval_cfg['jsonfile_prefix'] = osp.join('val', cfg.work_dir, time.ctime().replace(' ','_').replace(':','_'))
         eval_hook = CustomDistEvalHook if distributed else EvalHook
+
+        # path = "/cluster/home/terjenf/maptr_new/master_work/maptrv2_nusc_r50_24ep_maptracker_custom_split_and_code_20250128_152050/Tue_Jan_28_15_21_24_2025/pts_bbox/nuscmap_results.json"
+        
+        # with open(path , "r") as file: 
+        #     results = json.load(file)
+        
+        # eval_res = val_dataloader.dataset.evaluate(
+        #     results, logger=runner.logger, **eval_cfg)
+
         runner.register_hook(eval_hook(val_dataloader, **eval_cfg))
 
     # user-defined hooks

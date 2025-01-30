@@ -129,6 +129,7 @@ def main():
                     _module_path = _module_path + '.' + m
                 print(_module_path)
                 plg_lib = importlib.import_module(_module_path)
+               
             else:
                 # import dir is the dirpath for the config file
                 _module_dir = os.path.dirname(args.config)
@@ -139,8 +140,8 @@ def main():
                 print(_module_path)
                 plg_lib = importlib.import_module(_module_path)
 
+            from projects.mmdet3d_plugin.datasets.nuscenes_offlinemap_dataset_maptracker import CustomNuScenesOfflineLocalMapDatasetMapTracker
             from projects.mmdet3d_plugin.bevformer.apis.train import custom_train_model
-    
 
 
     config_name = cfg.filename.split("/")[-1].split(".")[0]
@@ -263,6 +264,8 @@ def main():
             if hasattr(datasets[0], 'PALETTE') else None)
     # add an attribute for visualization convenience
     model.CLASSES = datasets[0].CLASSES
+    #sub = "/cluster/home/terjenf/maptr_new/master_work/maptrv2_nusc_r50_24ep_maptracker_custom_split_and_code_20250128_152050/Tue_Jan_28_15_21_24_2025/pts_bbox/nuscmap_results.json"
+
     custom_train_model(
         model,
         datasets,

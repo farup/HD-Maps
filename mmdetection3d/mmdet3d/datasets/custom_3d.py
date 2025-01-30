@@ -47,7 +47,6 @@ class Custom3DDataset(Dataset):
     def __init__(self,
                  data_root,
                  ann_file,
-                 maptrack_data_ann,
                  pipeline=None,
                  classes=None,
                  modality=None,
@@ -62,7 +61,6 @@ class Custom3DDataset(Dataset):
         self.filter_empty_gt = filter_empty_gt
         self.box_type_3d, self.box_mode_3d = get_box_type(box_type_3d)
 
-        self.maptrack_data_ann = maptrack_data_ann
 
         self.CLASSES = self.get_classes(classes)
         self.cat2id = {name: i for i, name in enumerate(self.CLASSES)}

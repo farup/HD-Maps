@@ -9,7 +9,29 @@ plugin_dir = 'projects/mmdet3d_plugin/'
 # If point cloud range is changed, the models should also change their point
 # cloud range accordingly
 # point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
-point_cloud_range = [-15.0, -30.0,-10.0, 15.0, 30.0, 10.0]
+
+cam_list = False # use all
+#cam_list = ['CAM_FRONT', 'CAM_FRONT_RIGHT', 'CAM_FRONT_LEFT', 'CAM_BACK'] # (['CAM_FRONT', 'CAM_FRONT_RIGHT', 'CAM_FRONT_LEFT', 'CAM_BACK', 'CAM_BACK_LEFT', 'CAM_BACK_RIGHT'])
+roi_size = (60, 30) # bev range, 60m in x-axis, 30m in y-axis
+# bev_h_ = 50 # resolution of bev grid in pixels
+# bev_w_ = 100 # resolution of bev grid 
+# pc_range = [-roi_size[0]/2, -roi_size[1]/2, -3, roi_size[0]/2, roi_size[1]/2, 5]
+
+
+
+point_cloud_range = [-15.0, -30.0,-10.0, 15.0, 30.0, 10.0] # X-axis [-15m ,15m], Y-axis [-30m, 30m] 
+
+_dim_ = 256
+_pos_dim_ = _dim_//2
+_ffn_dim_ = _dim_*2
+_num_levels_ = 1
+# bev_h_ = 50
+# bev_w_ = 50
+bev_h_ = 200 # MapTRv2
+bev_w_ = 100 # MapTRv2
+queue_length = 1 # each sequence contains `queue_length` frames.
+
+
 voxel_size = [0.15, 0.15, 20.0]
 dbound=[1.0, 35.0, 0.5]
 
@@ -20,7 +42,6 @@ grid_config = {
     'depth': [1.0, 35.0, 0.5], # useful
 }
 
-
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 
@@ -30,10 +51,11 @@ class_names = [
     'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'
 ]
 # map has classes: divider, ped_crossing, boundary
-map_classes = ['divider', 'ped_crossing','boundary','centerline']
+map_classes = ['ped_crossing','divider','boundary']
+
 # fixed_ptsnum_per_line = 20
 # map_classes = ['divider',]
-num_vec=70
+num_vec=50
 fixed_ptsnum_per_gt_line = 20 # now only support fixed_pts > 0
 fixed_ptsnum_per_pred_line = 20
 eval_use_same_gt_sample_num_flag=True
@@ -46,15 +68,6 @@ input_modality = dict(
     use_map=False,
     use_external=True)
 
-_dim_ = 256
-_pos_dim_ = _dim_//2
-_ffn_dim_ = _dim_*2
-_num_levels_ = 1
-# bev_h_ = 50
-# bev_w_ = 50
-bev_h_ = 200
-bev_w_ = 100
-queue_length = 1 # each sequence contains `queue_length` frames.
 
 aux_seg_cfg = dict(
     use_aux_seg=True,
@@ -92,7 +105,7 @@ model = dict(
         bev_h=bev_h_,
         bev_w=bev_w_,
         num_query=900,
-        num_vec_one2one=num_vec,
+        num_vec_one2one=50,
         num_vec_one2many=300,
         k_one2many=6,
         num_pts_per_vec=fixed_ptsnum_per_pred_line, # one bbox
@@ -113,6 +126,7 @@ model = dict(
         transformer=dict(
             type='MapTRPerceptionTransformer',
             rotate_prev_bev=True,
+            num_cams = len(cam_list) if cam_list else 6,
             use_shift=True,
             use_can_bus=True,
             embed_dims=_dim_,
@@ -205,10 +219,12 @@ model = dict(
                       weight=5),
             pc_range=point_cloud_range))))
 
-dataset_type = 'CustomNuScenesOfflineLocalMapDataset'
+dataset_type = 'CustomNuScenesOfflineLocalMapDatasetMapTracker'
 data_root = 'data/nuscenes/'
-file_client_args = dict(backend='disk')
+torch_profile = False
+profile_mem = False
 
+file_client_args = dict(backend='disk')
 
 train_pipeline = [
     dict(type='LoadMultiViewImageFromFiles', to_float32=True),
@@ -248,13 +264,68 @@ test_pipeline = [
         ])
 ]
 
+
+
+# meta info for submission pkl
+meta = dict(
+    use_lidar=False,
+    use_camera=True,
+    use_radar=False,
+    use_map=False,
+    use_external=False,
+    output_format='vector')
+
+cat2id = {
+    'ped_crossing': 0,
+    'divider': 1,
+    'boundary': 2,
+}
+
+# vectorize params
+coords_dim = 2
+# rasterize params (for temporal matching use)
+canvas_size = (200, 100) # bev feature size
+thickness = 3 # thickness of rasterized polylines
+
+eval_config = dict(
+    type='CustomNuScenesOfflineLocalMapDatasetMapTracker',
+    data_root='./datasets/nuscenes',
+    ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
+    meta=meta,
+    roi_size=roi_size,
+    cat2id=cat2id,
+    pipeline=[
+        dict(
+            type='VectorizeMap',
+            coords_dim=coords_dim,
+            simplify=True,
+            normalize=False,
+            roi_size=roi_size
+        ),
+        dict(
+            type='RasterizeMap',   
+            roi_size=roi_size,
+            coords_dim=coords_dim,
+            canvas_size=canvas_size,
+            thickness=thickness,
+            semantic_mask=True,
+        ),
+        dict(type='FormatBundleMap'),
+        dict(type='Collect3D', keys=['vectors', 'semantic_mask'], meta_keys=['token', 'ego2img', 'sample_idx', 'ego2global_translation',
+        'ego2global_rotation', 'img_shape', 'scene_name'])
+    ],
+    interval=1,
+)
+
 data = dict(
     samples_per_gpu=4,
     workers_per_gpu=4, # TODO
     train=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=data_root + 'nuscenes_map_infos_train.pkl',
+        roi_size=roi_size,
+        cam_list=cam_list,
+        ann_file=data_root + 'nuscenes_map_infos_train_newsplit_maptrv2_custom.pkl',
         pipeline=train_pipeline,
         classes=class_names,
         modality=input_modality,
@@ -274,9 +345,12 @@ data = dict(
     val=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=data_root + 'nuscenes_map_infos_val.pkl',
-        map_ann_file=data_root + 'nuscenes_map_anns_val.json',
-        pipeline=test_pipeline,  bev_size=(bev_h_, bev_w_),
+        roi_size=roi_size,
+        cam_list=cam_list,
+        ann_file=data_root + 'nuscenes_map_infos_val_newsplit_maptrv2_custom.pkl',
+        map_ann_file=data_root + 'nuscenes_custom_map_anns_val.json',
+        pipeline=test_pipeline,
+        bev_size=(bev_h_, bev_w_),
         pc_range=point_cloud_range,
         fixed_ptsnum_per_line=fixed_ptsnum_per_gt_line,
         eval_use_same_gt_sample_num_flag=eval_use_same_gt_sample_num_flag,
@@ -286,8 +360,10 @@ data = dict(
     test=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=data_root + 'nuscenes_map_infos_val.pkl',
-        map_ann_file=data_root + 'nuscenes_map_anns_val.json',
+        roi_size=roi_size,
+        cam_list=cam_list,
+        ann_file=data_root + 'nuscenes_map_infos_val_newsplit_maptrv2_custom.pkl',
+        map_ann_file=data_root + 'nuscenes_custom_map_anns_val.json',
         pipeline=test_pipeline, 
         bev_size=(bev_h_, bev_w_),
         pc_range=point_cloud_range,
@@ -303,28 +379,27 @@ data = dict(
 
 optimizer = dict(
     type='AdamW',
-    lr=6e-4,
+    lr=0.75e-4,
     paramwise_cfg=dict(
         custom_keys={
             'img_backbone': dict(lr_mult=0.1),
         }),
-    weight_decay=0.01)
+    weight_decay=0.00125)
 
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 # learning policy
 lr_config = dict(
     policy='CosineAnnealing',
     warmup='linear',
-    warmup_iters=500,
+    warmup_iters=4000,
     warmup_ratio=1.0 / 3,
     min_lr_ratio=1e-3)
-
-
-total_epochs = 110
-evaluation = dict(interval=2, pipeline=test_pipeline, metric='chamfer',
-                  save_best='NuscMap_chamfer/mAP', rule='greater')
+total_epochs = 24
+# evaluation = dict(interval=2, pipeline=test_pipeline, metric='chamfer',
+#                   save_best='NuscMap_chamfer/mAP', rule='greater')
 # total_epochs = 50
-# evaluation = dict(interval=1, pipeline=test_pipeline)
+
+evaluation = dict(interval=1, pipeline=test_pipeline)
 
 runner = dict(type='EpochBasedRunner', max_epochs=total_epochs)
 

@@ -7,10 +7,10 @@
 #SBATCH --gres=gpu:1 
 #SBATCH --constraint=gpu80g
 
-#SBATCH --mem=50G              
-#SBATCH --output=/cluster/home/terjenf/maptr_new/slurm_outputs/maptrv2_maptrv2_split_24ep_scaled_hyp_run2.out    # Log file
+#SBATCH --mem=200G              # 5 gigabytes memory
+#SBATCH --output=/cluster/home/terjenf/maptr_new/slurm_outputs/maptrv2_maptracker_split_scaled_hyp_all_cam.out    # Log file
 
-#SBATCH --job-name="Maptrv2 Maptrv2-Split Scaled-hyp"
+#SBATCH --job-name="Maptrv2 Maptracker Split Scaled All cam"
 #SBATCH --mail-user=terjenf@stud.ntnu.no
 #SBATCH --mail-type=ALL
 
@@ -25,4 +25,4 @@ module load  Anaconda3/2023.09-0
 
 conda activate maptr_new
 
-python /cluster/home/terjenf/maptr_new/tools/train.py /cluster/home/terjenf/maptr_new/projects/configs/maptrv2/maptrv2_nusc_r50_24ep_maptrv2_scaled_hyp.py --work-dir /cluster/home/terjenf/maptr_new/final_Work
+python /cluster/home/terjenf/maptr_new/tools/train.py /cluster/home/terjenf/maptr_new/projects/configs/maptrv2/maptrv2_nusc_r50_24ep_maptracker_custom_split_and_code.py --work-dir /cluster/home/terjenf/maptr_new/final_work

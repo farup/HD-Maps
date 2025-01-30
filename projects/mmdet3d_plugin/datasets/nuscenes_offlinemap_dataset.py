@@ -1056,7 +1056,7 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
                  **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.map_extractor = NuscMapExtractor(self.data_root, self.bev_size)
+        #self.map_extractor = NuscMapExtractor(self.data_root, self.bev_size)
 
         self.map_ann_file = map_ann_file
 
@@ -1067,8 +1067,6 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
         self.MAPCLASSES = self.get_map_classes(map_classes) # map_classes = ['divider', 'ped_crossing','boundary']
 
 
-        self.cat2id_maptracker = {self.MAPCLASSES[0]: 1, self.MAPCLASSES[1]: 0, self.MAPCLASSES[2]: 2}
-   
         self.NUM_MAPCLASSES = len(self.MAPCLASSES)
         self.pc_range = pc_range
         patch_h = pc_range[4]-pc_range[1]
@@ -1170,48 +1168,6 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
             example['gt_pv_seg_mask'] = DC(to_tensor(anns_results['gt_pv_semantic_mask']), cpu_only=False) 
         return example
     
-    def prepare_train_data_maptracker(self, index):
-        
-        data_queue = []
-
-        # temporal aug
-        prev_indexs_list = list(range(index-self.queue_length, index))
-        random.shuffle(prev_indexs_list)
-        prev_indexs_list = sorted(prev_indexs_list[1:], reverse=True)
-        ## 
-
-        input_dict = self.get_data_info_maptracker(index)
-        if input_dict is None:
-            return None
-        frame_idx = input_dict['frame_idx']
-        scene_token = input_dict['scene_token']
-
-        self.pre_pipeline(input_dict)
-
-        example = self.pipeline(input_dict)
-        example = self.vectormap_pipeline(example,input_dict)
-
-        if self.filter_empty_gt and \
-                (example is None or ~(example['gt_labels_3d']._data != -1).any()):
-            return None
-        data_queue.insert(0, example)
-
-        for i in prev_indexs_list:
-            i = max(0, i)
-            input_dict = self.get_data_info_maptracker(i)
-            if input_dict is None:
-                return None
-            if input_dict['frame_idx'] < frame_idx and input_dict['scene_token'] == scene_token:
-                self.pre_pipeline(input_dict)
-                example = self.pipeline(input_dict)
-                example = self.vectormap_pipeline(example,input_dict) # gen_vectorized_samples
-                if self.filter_empty_gt and \
-                        (example is None or ~(example['gt_labels_3d']._data != -1).any()):
-                    return None
-                frame_idx = input_dict['frame_idx']
-            data_queue.insert(0, copy.deepcopy(example))
-        return self.union2one(data_queue)
-
     def prepare_train_data(self, index):
         """
         Training data preparation.
@@ -1318,154 +1274,6 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
         queue[-1]['img_metas'] = DC(metas_map, cpu_only=True)
         queue = queue[-1]
         return queue
-    
-
-    def get_data_info_maptracker(self, index):
-
-        sample = self.data_infos[index]
-        location = sample['location']
-
-        lidar2ego = np.eye(4)
-        lidar2ego[:3,:3] = Quaternion(sample['lidar2ego_rotation']).rotation_matrix
-        lidar2ego[:3, 3] = sample['lidar2ego_translation']
-
-        ego2global = np.eye(4)
-        ego2global[:3,:3] = Quaternion(sample['e2g_rotation']).rotation_matrix
-        ego2global[:3, 3] = sample['e2g_translation']
-
-
-        # NOTE: The original StreamMapNet uses the ego location to query the map,
-        # to align with the lidar-centered setting in MapTR, we made some modifiactions 
-        # here to switch to the lidar-center setting
-        lidar2global = ego2global @ lidar2ego
-        lidar2global_translation = list(lidar2global[:3, 3]) # Translational movment of ego car from origin 
-        lidar2global_translation = [float(x) for x in lidar2global_translation]
-
-        rotation = Quaternion(matrix=lidar2global)
-        lidar2global_rotation = list(rotation.q) # Orientational movment of ego car from origin
-
-        map_geoms = self.map_extractor.get_map_geom(location, lidar2global_translation, 
-                lidar2global_rotation)
-        
-
-        lidar_shifted_e2g_translation = np.array(sample['e2g_translation'])
-        lidar_shifted_e2g_translation[0] = lidar2global_translation[0]
-        lidar_shifted_e2g_translation[1] = lidar2global_translation[1]
-        lidar_shifted_e2g_translation = lidar_shifted_e2g_translation.tolist()
-        e2g_rotation = sample['e2g_rotation']
-
-        can_bus = np.zeros(18, dtype=np.float64)
-        can_bus[:3] = lidar_shifted_e2g_translation
-
-        patch_angle = quaternion_yaw(rotation) / np.pi * 180
-        if patch_angle < 0:
-            patch_angle += 360
-
-        can_bus[-2] = patch_angle / 180 * np.pi
-        can_bus[-1] = patch_angle
-
-        lidar2global = np.eye(4)
-        lidar2global[:3,:3] = Quaternion(e2g_rotation).rotation_matrix
-        lidar2global[:3, 3] = lidar_shifted_e2g_translation
-        global2lidar = np.linalg.inv(lidar2global)
-        
-        ego2lidar = global2lidar  @ ego2global
-
-        # map_label2geom = {}
-        # for k, v in map_geoms.items():
-        #     if k in self.cat2id_maptracker.keys():
-        #         map_label2geom[self.cat2id[k]] = v
-        
-        ego2img_rts = []
-        ego2cam_rts = []
-        camera2ego = []
-        camego2global_list = []
-        camera_intrinsics_list = []
-        lidar2cam_rts = []
-
-
-        for c in sample['cams'].values(): # transform ego   to camera image plane using cam extrinsics and intrincs
-            extrinsic, intrinsic = np.array(
-                c['extrinsics']), np.array(c['intrinsics'])
-
-            # ego coord to cam coord
-            #ego2cam_rt = extrinsic
-
-            cam2ego_rt = np.linalg.inv(extrinsic)
-            cam2lidar_rt = ego2lidar @ cam2ego_rt
-            lidar2cam_rt = np.linalg.inv(cam2lidar_rt)
-            ego2cam_rt = lidar2cam_rt # ego fram eq to lidar center
-
-
-            camera2ego.append(cam2ego_rt) # --------------- cam2lidar_rt or cam2ego_rt
-            lidar2cam_rts.append(ego2cam_rt)
-
-            camego2global = ego2global @ cam2ego_rt 
-            camego2global_list.append(camego2global)  
-
-            viewpad = np.eye(4) # homogenous 
-            viewpad[:intrinsic.shape[0], :intrinsic.shape[1]] = intrinsic
-
-            ego2img_rt = (viewpad @ ego2cam_rt) # combines cam intrin and extrin
-            ego2cam_rts.append(ego2cam_rt)
-            ego2img_rts.append(ego2img_rt)
-       
-            camera_intrinsics_list.append(np.array(viewpad))
-        
-        input_dict = {
-            'sample_idx': sample['token'], # 10796
-            'pts_filename': sample['lidar_path'], 
-            'lidar_path': sample['lidar_path'], 
-            'sweeps': None,
-            'map_location': location,
-            'ego2global_translation': lidar_shifted_e2g_translation, 
-            'ego2global_rotation': e2g_rotation,
-            'lidar2ego_translation': sample['lidar2ego_translation'],
-            'lidar2ego_rotation': sample['lidar2ego_rotation'],
-            'prev_idx': sample['prev'],
-            'next_idx': sample['next'],
-            'scene_token': sample['token'], # '59b397d0ad2d46c88c153b7498d1b0e8'
-            'frame_idx':  None, # what
-            'timestamp': sample['timestamp'],
-            'can_bus': can_bus, 
-
-            'lidar2ego': lidar2ego, 
-            'camera2ego': np.array(camera2ego, dtype=np.float32), 
-            'camego2global': torch.from_numpy(np.array(camego2global_list, dtype=np.float32)), 
-           
-            'img_filename': [c['img_fpath'] for c in sample['cams'].values()],
-            'lidar2img': ego2img_rts, 
-            'camera_intrinsics': np.array(camera_intrinsics_list, dtype=np.float64), 
-            'lidar2cam': np.array(lidar2cam_rts, dtype=np.float64), 
-
-            # # intrinsics are 3x3 Ks
-            # 'cam_intrinsics': [c['intrinsics'] for c in sample['cams'].values()],
-            # # extrinsics are 4x4 tranform matrix, **ego2cam**
-            # 'cam_extrinsics': [c['extrinsics'] for c in sample['cams'].values()],
-            # 'ego2img': ego2img_rts,
-            # 'ego2cam': ego2cam_rts,
-            # 'map_geoms': map_label2geom, # {0: List[ped_crossing(LineString)], 1: ...}
-            # #'ego2global_translation': sample['e2g_translation'], 
-            #'ego2global_rotation': Quaternion(sample['e2g_rotation']).rotation_matrix.tolist(),
-           
-
-            'ann_info': map_geoms, 
-
-            # 'scene_name': sample['scene_name'],
-        
-        }
-
-
-        lidar2ego = np.eye(4)
-        lidar2ego[:3,:3] = Quaternion(input_dict['lidar2ego_rotation']).rotation_matrix
-        lidar2ego[:3, 3] = input_dict['lidar2ego_translation']
-        ego2global = np.eye(4)
-        ego2global[:3,:3] = Quaternion(input_dict['ego2global_rotation']).rotation_matrix
-        ego2global[:3, 3] = input_dict['ego2global_translation']
-        lidar2global = ego2global @ lidar2ego
-        input_dict['lidar2global'] = lidar2global
-
-        return input_dict
 
 
     def get_data_info(self, index):
@@ -1489,6 +1297,7 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
         """
         info = self.data_infos[index]
         # standard protocal modified from SECOND.Pytorch
+        
         input_dict = dict(
             sample_idx=info['token'], # 'cfbabc453acc4d5cb6dd759920e1b72a' 
             pts_filename=info['lidar_path'],
@@ -1586,8 +1395,8 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
         # if not self.test_mode:
         #     # annos = self.get_ann_info(index)
 
-        
-        input_dict['ann_info'] = info['annotation']
+
+        input_dict['ann_info'] = info['annotation']  # input_dict['ann_info'].keys() dict_keys(['divider', 'ped_crossing', 'boundary', 'centerline']) [list of arrays]
 
         rotation = Quaternion(input_dict['ego2global_rotation'])
         translation = input_dict['ego2global_translation']
@@ -1628,21 +1437,6 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
         
         return input_dict
     
-    def prepare_test_data_maptracker(self, index):
-        """Prepare data for testing.
-
-        Args:
-            index (int): Index for accessing the target data.
-
-        Returns:
-            dict: Testing data dict of the corresponding index.
-        """
-        input_dict = self.get_data_info_maptracker(index)
-        self.pre_pipeline(input_dict)
-        example = self.pipeline(input_dict)
-        if self.is_vis_on_test:
-            example = self.vectormap_pipeline(example, input_dict)
-        return example
 
     def prepare_test_data(self, index):
         """Prepare data for testing.
@@ -1666,16 +1460,9 @@ class CustomNuScenesOfflineLocalMapDataset(CustomNuScenesDataset):
             dict: Data dictionary of the corresponding index.
         """
         if self.test_mode:
-            if self.maptrack_data_ann:
-                return self.prepare_test_data_maptracker(idx)
-            else: 
-                return self.prepare_test_data(idx)
+            return self.prepare_test_data(idx)
         while True:
-            # data = self.prepare_train_data(idx)
-            if self.maptrack_data_ann: 
-                data = self.prepare_train_data_maptracker(idx)
-            else: 
-                data = self.prepare_train_data(idx)
+            data = self.prepare_train_data(idx)
             if data is None:
                 idx = self._rand_another(idx)
                 continue

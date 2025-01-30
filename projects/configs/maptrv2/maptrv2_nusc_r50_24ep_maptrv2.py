@@ -207,7 +207,6 @@ model = dict(
 
 dataset_type = 'CustomNuScenesOfflineLocalMapDataset'
 data_root = 'data/nuscenes/'
-maptrack_data_ann = False
 
 torch_profile = False
 profile_mem = False
@@ -258,7 +257,6 @@ data = dict(
     train=dict(
         type=dataset_type,
         data_root=data_root,
-        maptrack_data_ann=maptrack_data_ann,
         ann_file=data_root + 'nuscenes_map_infos_temporal_train.pkl',
         pipeline=train_pipeline,
         classes=class_names,
@@ -279,7 +277,6 @@ data = dict(
     val=dict(
         type=dataset_type,
         data_root=data_root,
-        maptrack_data_ann=maptrack_data_ann,
         ann_file=data_root + 'nuscenes_map_infos_temporal_val.pkl',
         map_ann_file=data_root + 'nuscenes_map_anns_val.json',
         pipeline=test_pipeline,  bev_size=(bev_h_, bev_w_),
@@ -292,7 +289,6 @@ data = dict(
     test=dict(
         type=dataset_type,
         data_root=data_root,
-        maptrack_data_ann=maptrack_data_ann,
         ann_file=data_root + 'nuscenes_map_infos_temporal_val.pkl',
         map_ann_file=data_root + 'nuscenes_map_anns_val.json',
         pipeline=test_pipeline, 
