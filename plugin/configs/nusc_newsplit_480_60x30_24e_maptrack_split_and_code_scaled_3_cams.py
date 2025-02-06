@@ -6,12 +6,8 @@ _base_ = [
 type = 'Mapper'
 plugin = True
 
-maptr_v2 = False
-
 # plugin code dir
 plugin_dir = 'plugin/'
-
-cam_list = False
 
 # img configs
 img_norm_cfg = dict(
@@ -20,6 +16,8 @@ img_norm_cfg = dict(
 img_h = 480
 img_w = 800
 img_size = (img_h, img_w)
+
+cam_list = ['CAM_FRONT', 'CAM_FRONT_RIGHT', 'CAM_FRONT_LEFT'] # (['CAM_FRONT', 'CAM_FRONT_RIGHT', 'CAM_FRONT_LEFT', 'CAM_BACK', 'CAM_BACK_LEFT', 'CAM_BACK_RIGHT'])
 
 num_gpus = 1
 batch_size = 4
@@ -103,8 +101,8 @@ model = dict(
             relu_before_extra_convs=True),
         transformer=dict(
             type='PerceptionTransformer',
-            num_cams = len(cam_list) if cam_list else 6,
             embed_dims=bev_embed_dims,
+            num_cams = len(cam_list) if cam_list else 6,
             encoder=dict(
                 type='BEVFormerEncoder',
                 num_layers=1,
@@ -285,7 +283,7 @@ test_pipeline = [
 # configs for evaluation code
 # DO NOT CHANGE
 eval_config = dict(
-    type='NuscDataset',
+    type='NuscDatasetMapTracker',
     data_root='./datasets/nuscenes',
     ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
     meta=meta,
@@ -310,7 +308,7 @@ data = dict(
     samples_per_gpu=batch_size,
     workers_per_gpu=4,
     train=dict(
-        type='NuscDataset',
+        type='NuscDatasetMapTracker',
         data_root='./datasets/nuscenes',
         cam_list = cam_list, 
         ann_file='./datasets/nuscenes/nuscenes_map_infos_train_newsplit.pkl',
@@ -321,9 +319,9 @@ data = dict(
         seq_split_num=1,
     ),
     val=dict(
-        type='NuscDataset',
+        type='NuscDatasetMapTracker',
         data_root='./datasets/nuscenes',
-        cam_list=cam_list, 
+        cam_list = cam_list, 
         ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
         meta=meta,
         roi_size=roi_size,
@@ -334,9 +332,9 @@ data = dict(
         seq_split_num=1,
     ),
     test=dict(
-        type='NuscDataset',
+        type='NuscDatasetMapTracker',
         data_root='./datasets/nuscenes',
-        cam_list = cam_list, 
+        cam_list = cam_list,
         ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
         meta=meta,
         roi_size=roi_size,
@@ -360,19 +358,19 @@ profile = False
 # optimizer
 optimizer = dict(
     type='AdamW',
-    lr=5e-4 * (batch_size / 4),
+    lr=0.625e-4 * (batch_size / 4),
     paramwise_cfg=dict(
         custom_keys={
             'img_backbone': dict(lr_mult=0.1),
-        }),
-    weight_decay=1e-2)
+        }), # 5e-4 => 
+    weight_decay=0.00125)
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 
 # learning policy & schedule
 lr_config = dict(
     policy='CosineAnnealing',
     warmup='linear',
-    warmup_iters=500,
+    warmup_iters=4000,
     warmup_ratio=1.0 / 3,
     min_lr_ratio=3e-3)
 

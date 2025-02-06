@@ -30,9 +30,10 @@ class NuscDataset(BaseMapDataset):
         test_mode (bool): whether in test mode
     """
     
-    def __init__(self, data_root, **kwargs):
+    def __init__(self, data_root, cam_list=False, **kwargs):
         super().__init__(**kwargs)
         
+        self.cam_list = cam_list
         self.data_root = data_root
         self.map_extractor = NuscMapExtractor(data_root, self.roi_size)
         self.renderer = Renderer(self.cat2id, self.roi_size, 'nusc')
@@ -80,7 +81,18 @@ class NuscDataset(BaseMapDataset):
                 map_label2geom[self.cat2id[k]] = v
         
         ego2img_rts = []
-        for c in sample['cams'].values():
+        # dict_keys(['CAM_FRONT', 'CAM_FRONT_RIGHT', 'CAM_FRONT_LEFT', 'CAM_BACK', 'CAM_BACK_LEFT', 'CAM_BACK_RIGHT'])
+        cam_list = ['CAM_FRONT']
+
+        if self.cam_list: 
+            new_cams = {}
+            for k,v in sample['cams'].items(): 
+                if k in self.cam_list: 
+                    new_cams[k] = v
+        else: 
+            new_cams = sample['cams']
+
+        for c in new_cams.values():
             extrinsic, intrinsic = np.array(
                 c['extrinsics']), np.array(c['intrinsics'])
             ego2cam_rt = extrinsic # ego -> cam 
@@ -96,11 +108,11 @@ class NuscDataset(BaseMapDataset):
         input_dict = {
             'location': location,
             'token': sample['token'],
-            'img_filenames': [c['img_fpath'] for c in sample['cams'].values()],
+            'img_filenames': [c['img_fpath'] for c in new_cams.values()],
             # intrinsics are 3x3 Ks
-            'cam_intrinsics': [c['intrinsics'] for c in sample['cams'].values()],
+            'cam_intrinsics': [c['intrinsics'] for c in new_cams.values()],
             # extrinsics are 4x4 tranform matrix, **ego2cam**
-            'cam_extrinsics': [c['extrinsics'] for c in sample['cams'].values()],
+            'cam_extrinsics': [c['extrinsics'] for c in new_cams.values()],
             'ego2img': ego2img_rts,
             'map_geoms': map_label2geom, # {0: List[ped_crossing(LineString)], 1: ...}
             'ego2global_translation': sample['e2g_translation'], 

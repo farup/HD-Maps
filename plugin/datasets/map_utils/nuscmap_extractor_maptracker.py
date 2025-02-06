@@ -39,7 +39,7 @@ class NuscMapExtractor(object):
                      e2g_rotation: Union[List, NDArray]) -> Dict[str, List[Union[LineString, Polygon]]]:
         # Borrowed from MapTR's codebase to make sure data are the same
         # (center_x, center_y, len_y, len_x) in nuscenes format
-        patch_size_ego_coord = (self.roi_size[1], self.roi_size[0])
+        patch_size_ego_coord = (self.roi_size[1], self.roi_size[0]) # (30, 60)
         patch_size_lidar_coord = (self.roi_size[0], self.roi_size[1])
 
         vector_map_maptr = VectorizedLocalMap(self.nusc_maps[location], self.map_explorer[location],
@@ -95,7 +95,7 @@ class VectorizedLocalMap(object):
         map_pose = lidar2global_translation[:2]
         rotation = Quaternion(lidar2global_rotation)
         # import ipdb;ipdb.set_trace()
-        patch_box = (map_pose[0], map_pose[1], self.patch_size[0], self.patch_size[1])
+        patch_box = (map_pose[0], map_pose[1], self.patch_size[0], self.patch_size[1]) # idx: 688 (676.6069951944158, 1471.00078584883, 60, 30)
         
         patch_angle = quaternion_yaw(rotation) / np.pi * 180
         map_dict = {'divider':[],'ped_crossing':[],'boundary':[],'centerline':[]}

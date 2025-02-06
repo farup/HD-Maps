@@ -155,6 +155,7 @@ def main():
                     _module_path = _module_path + '.' + m
                 print(_module_path)
                 plg_lib = importlib.import_module(_module_path)
+            from plugin.datasets.nusc_dataset_maptracker import NuscDatasetMapTracker
 
     cfg.model.pretrained = None
     # in case the test dataset is concatenated

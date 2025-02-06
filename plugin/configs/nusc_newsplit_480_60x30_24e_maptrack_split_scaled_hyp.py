@@ -6,7 +6,6 @@ _base_ = [
 type = 'Mapper'
 plugin = True
 
-maptr_v2 = False
 
 # plugin code dir
 plugin_dir = 'plugin/'
@@ -14,6 +13,8 @@ plugin_dir = 'plugin/'
 # img configs
 img_norm_cfg = dict(
     mean=[103.530, 116.280, 123.675], std=[1.0, 1.0, 1.0], to_rgb=False)
+
+cam_list = False
 
 img_h = 480
 img_w = 800
@@ -102,6 +103,7 @@ model = dict(
         transformer=dict(
             type='PerceptionTransformer',
             embed_dims=bev_embed_dims,
+            num_cams = len(cam_list) if cam_list else 6,
             encoder=dict(
                 type='BEVFormerEncoder',
                 num_layers=1,
@@ -117,6 +119,7 @@ model = dict(
                             num_levels=1),
                         dict(
                             type='SpatialCrossAttention',
+                            num_cams = len(cam_list) if cam_list else 6,
                             deformable_attention=dict(
                                 type='MSDeformableAttention3D',
                                 embed_dims=bev_embed_dims,
@@ -308,6 +311,7 @@ data = dict(
     train=dict(
         type='NuscDataset',
         data_root='./datasets/nuscenes',
+        cam_list = cam_list, 
         ann_file='./datasets/nuscenes/nuscenes_map_infos_train_newsplit.pkl',
         meta=meta,
         roi_size=roi_size,
@@ -318,6 +322,7 @@ data = dict(
     val=dict(
         type='NuscDataset',
         data_root='./datasets/nuscenes',
+        cam_list = cam_list, 
         ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
         meta=meta,
         roi_size=roi_size,
@@ -330,6 +335,7 @@ data = dict(
     test=dict(
         type='NuscDataset',
         data_root='./datasets/nuscenes',
+        cam_list = cam_list, 
         ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
         meta=meta,
         roi_size=roi_size,
