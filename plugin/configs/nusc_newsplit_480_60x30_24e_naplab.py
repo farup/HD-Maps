@@ -6,7 +6,6 @@ _base_ = [
 type = 'Mapper'
 plugin = True
 
-
 # plugin code dir
 plugin_dir = 'plugin/'
 
@@ -14,16 +13,17 @@ plugin_dir = 'plugin/'
 img_norm_cfg = dict(
     mean=[103.530, 116.280, 123.675], std=[1.0, 1.0, 1.0], to_rgb=False)
 
-cam_list = False
-
 img_h = 480
 img_w = 800
 img_size = (img_h, img_w)
 
+sample_start = 2000
+sample_end = 2040
+
 num_gpus = 1
 batch_size = 4
 num_iters_per_epoch = 27846 // (num_gpus * batch_size)
-num_epochs = 28
+num_epochs = 24
 num_epochs_single_frame = num_epochs // 6
 total_iters = num_epochs * num_iters_per_epoch
 num_queries = 100
@@ -103,9 +103,8 @@ model = dict(
         transformer=dict(
             type='PerceptionTransformer',
             embed_dims=bev_embed_dims,
-            num_cams = len(cam_list) if cam_list else 6,
             encoder=dict(
-                type='BEVFormerEncoder',
+                type='BEVFormerEncoderNapLab',
                 num_layers=1,
                 pc_range=pc_range,
                 num_points_in_pillar=4,
@@ -119,7 +118,6 @@ model = dict(
                             num_levels=1),
                         dict(
                             type='SpatialCrossAttention',
-                            num_cams = len(cam_list) if cam_list else 6,
                             deformable_attention=dict(
                                 type='MSDeformableAttention3D',
                                 embed_dims=bev_embed_dims,
@@ -269,7 +267,7 @@ train_pipeline = [
 # data processing pipelines
 test_pipeline = [
     dict(type='LoadMultiViewImagesFromFiles', to_float32=True),
-    dict(type='ResizeMultiViewImages',
+    dict(type='ResizeMultiViewImagesNapLab',
          size=img_size, # H, W
          change_intrinsics=True,
          ),
@@ -277,16 +275,24 @@ test_pipeline = [
     dict(type='PadMultiViewImages', size_divisor=32),
     dict(type='FormatBundleMap'),
     dict(type='Collect3D', keys=['img'], meta_keys=(
-        'token', 'ego2img', 'sample_idx', 'ego2global_translation',
+        'token', 'ego2img', 'sample_idx', 'ego2global_translation', 'cx', 'cy', 'fw_coeff', 'bw_coeff', 'ego2cam',
         'ego2global_rotation', 'img_shape', 'scene_name'))
 ]
 
+# ann_file = "/cluster/home/terjenf/naplab/data/Trip077/naplab_maptracker_infos.pkl"
+#ann_file = "/cluster/home/terjenf/naplab/data/Trip077/naplab_fw_coeff_0_maptracker_infos.pkl"
+#ann_file = "/cluster/home/terjenf/naplab/data/Trip077/naplab_fe_coeff_reversed_maptracker_infos.pkl"
+ann_file = "/cluster/home/terjenf/naplab/data/Trip077/naplab_fe_coeff_reversed_insert_2x0_maptracker_infos.pkl"
+data_root = "/cluster/home/terjenf/naplab/data" # '/cluster/home/terjenf/maptracker/datasets/nuscenes',
 # configs for evaluation code
 # DO NOT CHANGE
 eval_config = dict(
-    type='NuscDataset',
-    data_root='./datasets/nuscenes',
-    ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
+    type='NapLabDataset',
+    data_root= data_root,
+    fw_coeff_0_start=True,
+    sample_start=sample_start,
+    sample_end=sample_end,
+    ann_file= ann_file, 
     meta=meta,
     roi_size=roi_size,
     cat2id=cat2id,
@@ -308,35 +314,13 @@ eval_config = dict(
 data = dict(
     samples_per_gpu=batch_size,
     workers_per_gpu=4,
-    train=dict(
-        type='NuscDataset',
-        data_root='./datasets/nuscenes',
-        cam_list = cam_list, 
-        ann_file='./datasets/nuscenes/nuscenes_map_infos_train_newsplit.pkl',
-        meta=meta,
-        roi_size=roi_size,
-        cat2id=cat2id,
-        pipeline=train_pipeline,
-        seq_split_num=1,
-    ),
-    val=dict(
-        type='NuscDataset',
-        data_root='./datasets/nuscenes',
-        cam_list = cam_list, 
-        ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
-        meta=meta,
-        roi_size=roi_size,
-        cat2id=cat2id,
-        pipeline=test_pipeline,
-        eval_config=eval_config,
-        test_mode=True,
-        seq_split_num=1,
-    ),
     test=dict(
-        type='NuscDataset',
-        data_root='./datasets/nuscenes',
-        cam_list = cam_list, 
-        ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
+        type='NapLabDataset',
+        sample_start=sample_start,
+        sample_end=sample_end,
+        data_root=data_root,
+        fw_coeff_0_start=True,
+        ann_file=ann_file, 
         meta=meta,
         roi_size=roi_size,
         cat2id=cat2id,
@@ -359,19 +343,19 @@ profile = False
 # optimizer
 optimizer = dict(
     type='AdamW',
-    lr=0.625e-4 * (batch_size / 4),
+    lr=5e-4 * (batch_size / 4),
     paramwise_cfg=dict(
         custom_keys={
             'img_backbone': dict(lr_mult=0.1),
-        }), # 5e-4 => 
-    weight_decay=0.00125)
+        }),
+    weight_decay=1e-2)
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 
 # learning policy & schedule
 lr_config = dict(
     policy='CosineAnnealing',
     warmup='linear',
-    warmup_iters=4000,
+    warmup_iters=500,
     warmup_ratio=1.0 / 3,
     min_lr_ratio=3e-3)
 

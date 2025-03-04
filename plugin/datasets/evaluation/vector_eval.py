@@ -15,6 +15,7 @@ from mmcv import Config
 from copy import deepcopy
 import os
 from IPython import embed
+import torch
 
 INTERP_NUM = 200 # number of points to interpolate during evaluation
 THRESHOLDS = [0.5, 1.0, 1.5] # AP thresholds
@@ -137,6 +138,7 @@ class VectorEvaluate(object):
         pred_lines = []
 
         # interpolate predictions
+        print("Eval")
         for vector in pred_vectors:
             vector = np.array(vector)
             vector_interp = self.interp_fixed_num(vector, INTERP_NUM)

@@ -153,9 +153,10 @@ def main():
 
     if args.work_dir is not None:
     # update configs according to CLI args if args.work_dir is not None
-    
-        if not os.path.exists(path_log_temp  := osp.join(args.work_dir, f'{config_name}_{timestamp}')):
-            os.makedirs(path_log_temp)
+        path_log_temp = osp.join(args.work_dir, f'{config_name}_{timestamp}')
+        if not os.path.exists(path_log_temp):
+            
+            os.makedirs(path_log_temp, exist_ok=True)
 
         cfg.work_dir = path_log_temp
 

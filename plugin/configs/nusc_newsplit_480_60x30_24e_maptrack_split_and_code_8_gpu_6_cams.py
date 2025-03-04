@@ -6,7 +6,6 @@ _base_ = [
 type = 'Mapper'
 plugin = True
 
-
 # plugin code dir
 plugin_dir = 'plugin/'
 
@@ -14,16 +13,16 @@ plugin_dir = 'plugin/'
 img_norm_cfg = dict(
     mean=[103.530, 116.280, 123.675], std=[1.0, 1.0, 1.0], to_rgb=False)
 
-cam_list = False
-
 img_h = 480
 img_w = 800
 img_size = (img_h, img_w)
 
-num_gpus = 1
+#cam_list = ['CAM_FRONT', 'CAM_FRONT_RIGHT', 'CAM_FRONT_LEFT', 'CAM_BACK'] # (['CAM_FRONT', 'CAM_FRONT_RIGHT', 'CAM_FRONT_LEFT', 'CAM_BACK', 'CAM_BACK_LEFT', 'CAM_BACK_RIGHT'])
+cam_list = False
+num_gpus = 8
 batch_size = 4
 num_iters_per_epoch = 27846 // (num_gpus * batch_size)
-num_epochs = 28
+num_epochs = 110
 num_epochs_single_frame = num_epochs // 6
 total_iters = num_epochs * num_iters_per_epoch
 num_queries = 100
@@ -284,7 +283,7 @@ test_pipeline = [
 # configs for evaluation code
 # DO NOT CHANGE
 eval_config = dict(
-    type='NuscDataset',
+    type='NuscDatasetMapTracker',
     data_root='./datasets/nuscenes',
     ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
     meta=meta,
@@ -309,7 +308,7 @@ data = dict(
     samples_per_gpu=batch_size,
     workers_per_gpu=4,
     train=dict(
-        type='NuscDataset',
+        type='NuscDatasetMapTracker',
         data_root='./datasets/nuscenes',
         cam_list = cam_list, 
         ann_file='./datasets/nuscenes/nuscenes_map_infos_train_newsplit.pkl',
@@ -320,7 +319,7 @@ data = dict(
         seq_split_num=1,
     ),
     val=dict(
-        type='NuscDataset',
+        type='NuscDatasetMapTracker',
         data_root='./datasets/nuscenes',
         cam_list = cam_list, 
         ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
@@ -333,9 +332,9 @@ data = dict(
         seq_split_num=1,
     ),
     test=dict(
-        type='NuscDataset',
+        type='NuscDatasetMapTracker',
         data_root='./datasets/nuscenes',
-        cam_list = cam_list, 
+        cam_list = cam_list,
         ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
         meta=meta,
         roi_size=roi_size,
@@ -359,19 +358,19 @@ profile = False
 # optimizer
 optimizer = dict(
     type='AdamW',
-    lr=0.625e-4 * (batch_size / 4),
+    lr=5e-4 * (batch_size / 4),
     paramwise_cfg=dict(
         custom_keys={
             'img_backbone': dict(lr_mult=0.1),
-        }), # 5e-4 => 
-    weight_decay=0.00125)
+        }),
+    weight_decay=1e-2)
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 
 # learning policy & schedule
 lr_config = dict(
     policy='CosineAnnealing',
     warmup='linear',
-    warmup_iters=4000,
+    warmup_iters=500,
     warmup_ratio=1.0 / 3,
     min_lr_ratio=3e-3)
 

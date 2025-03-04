@@ -286,6 +286,7 @@ eval_config = dict(
     type='NuscDatasetMapTracker',
     data_root='./datasets/nuscenes',
     ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
+    cam_list = cam_list, 
     meta=meta,
     roi_size=roi_size,
     cat2id=cat2id,

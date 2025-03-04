@@ -38,6 +38,8 @@ class BaseMapDataset(Dataset):
                  work_dir=None,
                  eval_config=None,
                  test_mode=False,
+                 sample_start=2000,
+                 sample_end=2040
         ):
         super().__init__()
         self.ann_file = ann_file
@@ -48,6 +50,8 @@ class BaseMapDataset(Dataset):
         self.interval = interval
         self.seq_split_num = seq_split_num
 
+        self.sample_start=sample_start 
+        self.sample_end=sample_end
 
         self.load_annotations(self.ann_file)
         self.idx2token = {}
@@ -209,6 +213,12 @@ class BaseMapDataset(Dataset):
         
         else:
             raise ValueError("output format must be either \'raster\' or \'vector\'")
+        
+    def evaluate_sub(self, result_path, logger=None, **kwargs):
+
+        return self._evaluate(result_path, logger=logger)
+
+
 
     def evaluate(self, results, logger=None, **kwargs):
         '''Evaluate prediction result based on `output_format` specified by dataset.
@@ -286,6 +296,53 @@ class BaseMapDataset(Dataset):
             
             self.renderer.render_bev_from_mask(semantic_mask, out_dir)
 
+
+    def show_result_video(self, submission, idx, score_thr=0, draw_score=False, out_dir='demo/', viz_image=None):
+        '''Visualize prediction result.
+
+        Args:
+            idx (int): index of sample.
+            submission (dict): prediction results.
+            score_thr (float): threshold to filter prediction results.
+            out_dir (str): output directory.
+        '''
+
+        meta = submission['meta']
+        output_format = meta['output_format']
+        token = self.idx2token[idx]
+        results = submission['results'][token]
+        sample = self.get_sample(idx)
+
+        imgs = [mmcv.imread(i) for i in sample['img_filenames']]
+        cam_extrinsics = sample['cam_extrinsics']
+        cam_intrinsics = sample['cam_intrinsics']
+       
+        if output_format == 'raster':
+            semantic_mask = results['semantic_mask'].numpy()
+            self.renderer.render_bev_from_mask(semantic_mask, out_dir)
+        
+        elif output_format == 'vector':
+            vectors = {label: [] for label in self.cat2id.values()}
+            for i in range(len(results['labels'])):
+                score = results['scores'][i]
+                label = results['labels'][i]
+                prop = results['prop'][i]
+                v = results['vectors'][i]
+
+                if score > score_thr:
+                    if draw_score:
+                        vectors[label].append((v, score, prop))
+                    else:
+                        vectors[label].append(v)
+
+            #self.renderer.render_bev_from_vectors(vectors, out_dir, draw_scores=draw_score)
+            pred_image = self.renderer.render_bev_from_vectors_video(vectors, out_dir, idx, draw_scores=draw_score, viz_image=viz_image)
+            # self.renderer.render_camera_views_from_vectors(vectors, imgs, 
+            #         cam_extrinsics, cam_intrinsics, 2, out_dir)
+
+            return pred_image
+
+
     def show_result(self, submission, idx, score_thr=0, draw_score=False, out_dir='demo/'):
         '''Visualize prediction result.
 
@@ -305,7 +362,8 @@ class BaseMapDataset(Dataset):
         imgs = [mmcv.imread(i) for i in sample['img_filenames']]
         cam_extrinsics = sample['cam_extrinsics']
         cam_intrinsics = sample['cam_intrinsics']
-
+        
+        viz_images = []
         if output_format == 'raster':
             semantic_mask = results['semantic_mask'].numpy()
             self.renderer.render_bev_from_mask(semantic_mask, out_dir)
@@ -324,6 +382,7 @@ class BaseMapDataset(Dataset):
                     else:
                         vectors[label].append(v)
 
+            #self.renderer.render_bev_from_vectors(vectors, out_dir, draw_scores=draw_score)
             self.renderer.render_bev_from_vectors(vectors, out_dir, draw_scores=draw_score)
             # self.renderer.render_camera_views_from_vectors(vectors, imgs, 
             #         cam_extrinsics, cam_intrinsics, 2, out_dir)

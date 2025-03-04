@@ -4,8 +4,16 @@ from mmcv import Config
 import os
 from mmdet3d.datasets import build_dataset, build_dataloader
 from IPython import embed
+import imageio
 
 import sys 
+
+sys.path.append("/cluster/home/terjenf/naplab")
+# sys.path.append("/cluster/home/terjenf/naplab/naplab")
+# sys.path.append("/cluster/home/terjenf/naplab/naplab/naplab")
+
+
+from naplab import NapLab
 
 
 sys.path.append("/cluster/home/terjenf/")
@@ -61,8 +69,17 @@ def import_plugin(cfg):
             for plugin_dir in plugin_dirs:
                 import_path(plugin_dir)
 
+    
+
+
 def main():
+
+    dataroot ="/cluster/home/terjenf/naplab/data"
+    trip="Trip077"
+    nap = NapLab(dataroot=dataroot, trip=trip)
     args = parse_args()
+
+
     cfg = Config.fromfile(args.config)
     import_plugin(cfg)
     # build the dataset
@@ -82,23 +99,41 @@ def main():
     os.makedirs(scene_dir, exist_ok=True)
     start_idx = scene_name2idx[scene_name][0]
     results = mmcv.load(args.result)
-    for idx in mmcv.track_iter_progress(scene_name2idx[scene_name]):
+
+
+
+    pred_dir = os.path.join(scene_dir, 'pred')
+    
+
+    for idx, sample in zip(scene_name2idx[scene_name], dataset.samples):
         
-        out_dir = os.path.join(scene_dir, str(idx - start_idx + 1))
-        gt_dir = os.path.join(out_dir, 'gt')
-        pred_dir = os.path.join(out_dir, 'pred')
+        sample_id = nap._token2ind.get('sample')[sample['token']]
+
+        viz_image = nap.visualize_sample_compact(sample_id, model_name="StreamMapNet", save=True)
+       
+
+        #out_dir = os.path.join(scene_dir, str(idx - start_idx + 1))
+        #gt_dir = os.path.join(scene_dir, 'gt')
+        
 
         if args.result is not None:
             os.makedirs(pred_dir, exist_ok=True)
-            dataset.show_result(
+            pred_img = dataset.show_result_video(
                     submission=results, 
                     idx=idx, 
                     score_thr=args.thr, 
-                    out_dir=pred_dir
+                    out_dir=pred_dir,
+                    viz_image=viz_image,
                 )
+
+
             
-        os.makedirs(gt_dir, exist_ok=True)
-        dataset.show_gt(idx, gt_dir)
+        #os.makedirs(gt_dir, exist_ok=True)
+        #dataset.show_gt(idx, gt_dir)
+    
+   
+
+ 
 
 
 if __name__ == '__main__':

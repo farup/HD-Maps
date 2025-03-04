@@ -12,10 +12,11 @@ from shapely.geometry import LineString, Polygon
 from nuscenes.eval.common.utils import quaternion_yaw
 import math
 import torch 
+import pickle
 
 
 @DATASETS.register_module()
-class NuscDataset(BaseMapDataset):
+class NapLabDataset(BaseMapDataset):
     """NuScenes map dataset class.
 
     Args:
@@ -30,13 +31,14 @@ class NuscDataset(BaseMapDataset):
         test_mode (bool): whether in test mode
     """
     
-    def __init__(self, data_root, cam_list=False, **kwargs):
+    def __init__(self, data_root, fw_coeff_0_start=False,  cam_list=False, **kwargs):
         super().__init__(**kwargs)
         
         self.cam_list = cam_list
         self.data_root = data_root
-        self.map_extractor = NuscMapExtractor(data_root, self.roi_size)
-        self.renderer = Renderer(self.cat2id, self.roi_size, 'nusc')
+        self.fw_coeff_0_start = fw_coeff_0_start
+        #self.map_extractor = NuscMapExtractor(data_root, self.roi_size)
+        self.renderer = Renderer(self.cat2id, self.roi_size, 'naplab')
     
     def load_annotations(self, ann_file):
         """Load annotations from ann_file.
@@ -50,8 +52,11 @@ class NuscDataset(BaseMapDataset):
         """
 
         start_time = time()
-        ann = mmcv.load(ann_file)
-        samples = list(ann)[::self.interval]
+        with open(ann_file, 'rb') as f: 
+            ann= pickle.load(f)
+            print("Loaded", ann_file)
+
+        samples = list(ann)[::self.interval][self.sample_start:self.sample_end]
         
         print(f'collected {len(samples)} samples in {(time() - start_time):.2f}s')
         self.samples = samples
@@ -71,16 +76,21 @@ class NuscDataset(BaseMapDataset):
         location = sample['location']
    
              
-        map_geoms = self.map_extractor.get_map_geom(location, sample['e2g_translation'],
+        # map_geoms = self.map_extractor.get_map_geom(location, sample['e2g_translation'],
                                                     
                                                      
-                sample['e2g_rotation']) # NuscMapExtractor.get_map_geom
-        map_label2geom = {}
-        for k, v in map_geoms.items(): # divider line string, ped cros line string, driv are polygon
-            if k in self.cat2id.keys():
-                map_label2geom[self.cat2id[k]] = v
+        #         sample['e2g_rotation']) # NuscMapExtractor.get_map_geom
+        # map_label2geom = {}
+        # for k, v in map_geoms.items(): # divider line string, ped cros line string, driv are polygon
+        #     if k in self.cat2id.keys():
+        #         map_label2geom[self.cat2id[k]] = v
         
         ego2img_rts = []
+        ego2cam_rts = []
+        fw_coeffs = []
+        cx = []
+        cy = []
+
         # dict_keys(['CAM_FRONT', 'CAM_FRONT_RIGHT', 'CAM_FRONT_LEFT', 'CAM_BACK', 'CAM_BACK_LEFT', 'CAM_BACK_RIGHT'])
         #cam_list = ['CAM_FRONT']
 
@@ -101,6 +111,14 @@ class NuscDataset(BaseMapDataset):
             ego2cam_rt = (viewpad @ ego2cam_rt) # ego -> cam_rt  -> img
             ego2img_rts.append(ego2cam_rt)
 
+            if self.fw_coeff_0_start: 
+                fw_coeffs.append(c['fw_coeff_0_start'])
+            else: 
+                fw_coeffs.append(c['fw_ceoff'])
+            cx.append(c['cx'])
+            cy.append(c['cy'])
+            ego2cam_rts.append(extrinsic)
+
         # if sample['sample_idx'] == 0:
         #     is_first_frame = True
         # else:
@@ -114,7 +132,11 @@ class NuscDataset(BaseMapDataset):
             # extrinsics are 4x4 tranform matrix, **ego2cam**
             'cam_extrinsics': [c['extrinsics'] for c in new_cams.values()],
             'ego2img': ego2img_rts,
-            'map_geoms': map_label2geom, # {0: List[ped_crossing(LineString)], 1: ...}
+            'ego2cam': ego2cam_rts,
+            'fw_coeff': fw_coeffs, 
+            'cx': cx,
+            'cy': cy, 
+            'map_geoms': None, # {0: List[ped_crossing(LineString)], 1: ...}
             'ego2global_translation': sample['e2g_translation'], 
             'ego2global_rotation': Quaternion(sample['e2g_rotation']).rotation_matrix.tolist(),
             # 'is_first_frame': is_first_frame, # deprecated

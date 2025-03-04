@@ -18,6 +18,12 @@ from mmdet_train import set_random_seed
 from mmdet.datasets import replace_ImageToTensor
 from IPython import embed
 
+import sys 
+
+sys.path.append("/cluster/home/terjenf/")
+sys.path.append("/cluster/home/terjenf/StreamMapNet/")
+sys.path.append("/cluster/home/terjenf/StreamMapNet/plugin")
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description='MMDet test (and eval) a model')
@@ -85,6 +91,9 @@ def parse_args():
         choices=['none', 'pytorch', 'slurm', 'mpi'],
         default='none',
         help='job launcher')
+    parser.add_argument("--rob", nargs="?", const=True, default=False, help="Optional input file")
+
+
     parser.add_argument('--local_rank', type=int, default=0)
     args = parser.parse_args()
     if 'LOCAL_RANK' not in os.environ:
@@ -253,6 +262,8 @@ def main():
             ]:
                 eval_kwargs.pop(key, None)
             print('start evaluation!')
+
+            #print(dataset.evaluate_sub(res_path, **eval_kwargs))
             print(dataset.evaluate(outputs, **eval_kwargs))
 
 

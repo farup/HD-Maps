@@ -6,6 +6,9 @@ import copy
 import cv2
 import matplotlib.pyplot as plt
 from PIL import Image
+import imageio
+
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 def remove_nan_values(uv):
     is_u_valid = np.logical_not(np.isnan(uv[:, 0]))
@@ -99,11 +102,21 @@ COLOR_MAPS_PLT = {
     'drivable_area': 'y',
 }
 
+
+
 CAM_NAMES_AV2 = ['ring_front_center', 'ring_front_right', 'ring_front_left',
     'ring_rear_right','ring_rear_left', 'ring_side_right', 'ring_side_left',
     ]
 CAM_NAMES_NUSC = ['CAM_FRONT', 'CAM_FRONT_RIGHT', 'CAM_FRONT_LEFT',
     'CAM_BACK', 'CAM_BACK_LEFT', 'CAM_BACK_RIGHT',]
+
+CAM_NAMES_NAPLAB = [
+        'C1_front60Single', 
+        'C8_R2', 
+        'C7_L2',
+        'C4_rearCam', 
+        'C6_L1',
+        'C5_R1']
 
 class Renderer(object):
     """Render map elements on image views.
@@ -120,8 +133,73 @@ class Renderer(object):
         self.id2cat = {v: k for k, v in cat2id.items()}
         if dataset == 'av2':
             self.cam_names = CAM_NAMES_AV2
+        elif dataset == 'naplab':
+            self.cam_names = CAM_NAMES_NAPLAB
         else:
             self.cam_names = CAM_NAMES_NUSC
+
+
+
+
+    
+
+    def render_bev_from_vectors_video(self, vectors, out_dir, idx, draw_scores=False, viz_image=None):
+        '''Render bev segmentation using vectorized map elements.
+        
+        Args:
+            vectors (dict): dict of vectorized map elements.
+            out_dir (str): output directory
+        '''
+
+        car_img_r = Image.open('/cluster/home/terjenf/StreamMapNet/resources/car.png')
+        map_path = os.path.join(out_dir, f'sample_map_{idx}.png')
+        car_img = car_img_r.transpose(Image.FLIP_LEFT_RIGHT)
+
+        fig, ax = plt.subplots(figsize=(self.roi_size[0], self.roi_size[1]))
+        ax.set_xlim(-self.roi_size[0] / 2, self.roi_size[0] / 2)
+        ax.set_ylim(-self.roi_size[1] / 2, self.roi_size[1] /2)
+        ax.axis('off')
+        ax.imshow(car_img, extent=[-2.5, 2.5, -2.0, 2.0])
+
+
+        for label, vector_list in vectors.items():
+            cat = self.id2cat[label]
+            color = COLOR_MAPS_PLT[cat]
+            for vector in vector_list:
+                if draw_scores:
+                    vector, score, prop = vector
+                if isinstance(vector, list):
+                    vector = np.array(vector)
+                    from shapely.geometry import LineString
+                    vector = np.array(LineString(vector).simplify(0.2).coords)
+                pts = vector[:, :2]
+                x = np.array([pt[0] for pt in pts])
+                y = np.array([pt[1] for pt in pts])
+                # plt.quiver(x[:-1], y[:-1], x[1:] - x[:-1], y[1:] - y[:-1], angles='xy', color=color,
+                #     scale_units='xy', scale=1)
+                # for i in range(len(x)):
+                ax.plot(x, y, 'o-', color=color, linewidth=20, markersize=50)
+                if draw_scores:
+                    if prop:
+                        p = 'p'
+                    else:
+                        p = ''
+                    score = round(score, 2)
+                    mid_idx = len(x) // 2
+                    ax.text(x[mid_idx], y[mid_idx], str(score)+p, fontsize=100, color=color)
+
+
+        ax_inset = inset_axes(ax, width="90%", height="90%", loc="lower center", 
+                      bbox_to_anchor=(0.5, -1, 1, 1), bbox_transform=ax.transAxes)
+
+        ax_inset.imshow(viz_image)
+        ax_inset.axis('off') 
+
+        plt.savefig(map_path, bbox_inches='tight', dpi=40)
+        viz_image = imageio.imread(map_path)
+        print("Saved pred:", map_path)
+        plt.close()
+        return viz_image
 
     def render_bev_from_vectors(self, vectors, out_dir, draw_scores=False):
         '''Render bev segmentation using vectorized map elements.
@@ -131,8 +209,8 @@ class Renderer(object):
             out_dir (str): output directory
         '''
 
-        car_img = Image.open('resources/car.png')
-        map_path = os.path.join(out_dir, 'map.jpg')
+        car_img = Image.open('/cluster/home/terjenf/StreamMapNet/resources/car.png')
+        map_path = os.path.join(out_dir, 'map.png')
 
         plt.figure(figsize=(self.roi_size[0], self.roi_size[1]))
         plt.xlim(-self.roi_size[0] / 2, self.roi_size[0] / 2)

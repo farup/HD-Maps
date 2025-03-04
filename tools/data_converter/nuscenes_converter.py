@@ -79,9 +79,9 @@ def create_nuscenes_infos_map(root_path,
     val_sample_idx = 0
     for sample in mmcv.track_iter_progress(nusc.sample):
         lidar_token = sample['data']['LIDAR_TOP']
-        sd_rec = nusc.get('sample_data', sample['data']['LIDAR_TOP'])
+        sd_rec = nusc.get('sample_data', sample['data']['LIDAR_TOP']) # lidar info ( with sample_token)
         cs_record = nusc.get('calibrated_sensor',
-                             sd_rec['calibrated_sensor_token'])
+                             sd_rec['calibrated_sensor_token']) # translation and orientation from lidar?
         pose_record = nusc.get('ego_pose', sd_rec['ego_pose_token'])
         lidar_path, boxes, _ = nusc.get_sample_data(lidar_token)
 
@@ -96,13 +96,13 @@ def create_nuscenes_infos_map(root_path,
             'token': sample['token'],
             'cams': {},
             
-            'lidar2ego_translation': cs_record['translation'],
-            'lidar2ego_rotation': cs_record['rotation'],
-            'e2g_translation': pose_record['translation'],
-            'e2g_rotation': pose_record['rotation'],
-            'timestamp': sample['timestamp'],
-            'location': location,
-            'scene_name': scene_name
+            'lidar2ego_translation': cs_record['translation'], # list len=3:  [0.943713, 0.0, 1.84023]
+            'lidar2ego_rotation': cs_record['rotation'], # list len=3: [0.7077955119163518, -0.006492242056004365, 0.010646214713995808, -0.7063073142877817]
+            'e2g_translation': pose_record['translation'], # list len=3: [1010.1328353833223, 610.8111652918716, 0.0]
+            'e2g_rotation': pose_record['rotation'], # list len=4: [-0.7495886280607293, -0.0077695335695504636, 0.00829759813869316, -0.6618063711504101]
+            'timestamp': sample['timestamp'], # int: 1531883530449377
+            'location': location, # 'singapore-onenorth'
+            'scene_name': scene_name # 'scene-0001'
         }
 
         # obtain 6 image's information per frame
@@ -115,15 +115,15 @@ def create_nuscenes_infos_map(root_path,
             'CAM_BACK_RIGHT',
         ]
         for cam in camera_types:
-            cam_token = sample['data'][cam]
+            cam_token = sample['data'][cam] # val_saple_idx =1 : cam_front token  'ec7096278e484c9ebe6894a2ad5682e9'
             sd_rec = nusc.get('sample_data', cam_token)
-            cs_record = nusc.get('calibrated_sensor', sd_rec['calibrated_sensor_token'])
+            cs_record = nusc.get('calibrated_sensor', sd_rec['calibrated_sensor_token']) # val_sample_idx=2: cam_front, 'ego_pose_token' ='6ff2a727cdd447c5956582f420c5a80c' ||
 
-            cam2ego_rotation = Quaternion(cs_record['rotation']).rotation_matrix
-            cam2ego_translation = np.array(cs_record['translation'])
-
+            cam2ego_rotation = Quaternion(cs_record['rotation']).rotation_matrix # 3x3
+            cam2ego_translation = np.array(cs_record['translation']) # array([1.70079119, 0.01594563, 1.51095764]) # gives the position of the camera origin in the ego frame.  camera's origin and express it in the ego frame, it is located at (1.70, 0.016, 1.51) meters in the ego coordinate system.
+            # translation/rotation defined from cam 2 ego 
             ego2cam_rotation = cam2ego_rotation.T
-            ego2cam_translation = ego2cam_rotation.dot(-cam2ego_translation)
+            ego2cam_translation = ego2cam_rotation.dot(-cam2ego_translation) # cam
 
             transform_matrix = np.eye(4) #ego2cam
             transform_matrix[:3, :3] = ego2cam_rotation
@@ -131,12 +131,12 @@ def create_nuscenes_infos_map(root_path,
 
             cam_info = dict(
                 extrinsics=transform_matrix, # ego2cam
-                intrinsics=cs_record['camera_intrinsic'],
-                img_fpath=str(nusc.get_sample_data_path(sd_rec['token']))
+                intrinsics=cs_record['camera_intrinsic'], # list 3x3
+                img_fpath=str(nusc.get_sample_data_path(sd_rec['token'])) # '/cluster/home/terjenf/StreamMapNet/datasets/nuscenes/samples/CAM_FRONT/n015-2018-07-18-11-07-57+0800__CAM_FRONT__1531883530412470.jpg' cam_front_right: '/cluster/home/terjenf/StreamMapNet/datasets/nuscenes/samples/CAM_FRONT_RIGHT/n015-2018-07-18-11-07-57+0800__CAM_FRONT_RIGHT__1531883530420339.jpg'
             )
             info['cams'][cam] = cam_info
         
-        if scene_name in train_scenes:
+        if scene_name in train_scenes: #
             info.update({
                 'sample_idx': train_sample_idx,
                 'prev': train_sample_idx - 1,
@@ -167,24 +167,24 @@ def create_nuscenes_infos_map(root_path,
         dest_path = root_path
     
     if test:
-        info_path = osp.join(dest_path, f'{info_prefix}_map_infos_test.pkl')
+        info_path = osp.join(dest_path, f'{info_prefix}_map_infos_steammapnet_test.pkl')
         print(f'saving test set to {info_path}')
         mmcv.dump(test_samples, info_path)
 
     else:
         # for training set
         if new_split:
-            info_path = osp.join(dest_path, f'{info_prefix}_map_infos_train_newsplit.pkl')
+            info_path = osp.join(dest_path, f'{info_prefix}_map_infos_train_steammapnet_newsplit.pkl')
         else:
-            info_path = osp.join(dest_path, f'{info_prefix}_map_infos_train.pkl')
+            info_path = osp.join(dest_path, f'{info_prefix}_map_infos_steammapnet_train.pkl')
         print(f'saving training set to {info_path}')
         mmcv.dump(train_samples, info_path)
 
         # for val set
         if new_split:
-            info_path = osp.join(dest_path, f'{info_prefix}_map_infos_val_newsplit.pkl')
+            info_path = osp.join(dest_path, f'{info_prefix}_map_infos_val_steammapnet_newsplit.pkl')
         else:
-            info_path = osp.join(dest_path, f'{info_prefix}_map_infos_val.pkl')
+            info_path = osp.join(dest_path, f'{info_prefix}_map_infos_val_steammapnet.pkl')
         print(f'saving validation set to {info_path}')
         mmcv.dump(val_samples, info_path)
 
