@@ -44,6 +44,8 @@ class BaseMapDataset(Dataset):
                  sampling_span=10,
                  matching=False,
                  eval_semantic=False,
+                 sample_start=4200,
+                 sample_end=4400
         ):
         super().__init__()
         self.ann_file = ann_file
@@ -58,6 +60,9 @@ class BaseMapDataset(Dataset):
         self.interval = interval
         self.seq_split_num = seq_split_num
         self.eval_semantic = eval_semantic
+
+        self.sample_start=sample_start 
+        self.sample_end=sample_end
 
         self.load_annotations(self.ann_file)
 
@@ -261,8 +266,8 @@ class BaseMapDataset(Dataset):
                         single_case['track_scores'].append(score)
                         single_case['track_labels'].append(label)
 
-                submissions['results'][token] = single_case
-                
+                submissions['results'][token] = single_case # submission.keys() dict_keys(['meta', 'results'])
+                # submissions['results'][token].keys(): dict_keys(['vectors', 'scores', 'labels', 'props', 'track_vectors', 'track_scores', 'track_labels', 'semantic_mask']
                 if not self.eval_semantic:
                     pos_results = pred['pos_results']
                     pos_vectors = pos_results['vectors']
@@ -305,8 +310,8 @@ class BaseMapDataset(Dataset):
         Returns:
             dict: Evaluation results.
         '''
-        print('len of the results', len(results))
-
+        print('len of the results', len(results)) # len(results) 5981
+        # results[0].keys() dict_keys(['vectors', 'scores', 'labels', 'props', 'token', 'semantic_mask'])
         eval_semantic = True if (hasattr(self, 'eval_semantic') and self.eval_semantic) else False
         save_semantic = True if 'save_semantic' in kwargs and kwargs['save_semantic'] or eval_semantic \
                             else False

@@ -25,8 +25,9 @@ class NuscDataset(BaseMapDataset):
         test_mode (bool): whether in test mode
     """
     
-    def __init__(self, data_root, **kwargs):
+    def __init__(self, data_root, cam_list=False, **kwargs):
         super().__init__(**kwargs)
+        self.cam_list = cam_list
         self.map_extractor = NuscMapExtractor(data_root, self.roi_size)
         self.renderer = Renderer(self.cat2id, self.roi_size, 'nusc')
     
@@ -88,7 +89,7 @@ class NuscDataset(BaseMapDataset):
         lidar2global_rotation = list(Quaternion(matrix=lidar2global).q)
 
         map_geoms = self.map_extractor.get_map_geom(location, lidar2global_translation, 
-                lidar2global_rotation)
+                lidar2global_rotation) # = VectorizedLocalMap.gen_vectorized_samples
         
         lidar_shifted_e2g_translation = np.array(sample['e2g_translation'])
         lidar_shifted_e2g_translation[0] = lidar2global_translation[0]
@@ -108,9 +109,17 @@ class NuscDataset(BaseMapDataset):
             if k in self.cat2id.keys():
                 map_label2geom[self.cat2id[k]] = v
         
+        if self.cam_list: 
+            new_cams = {}
+            for k,v in sample['cams'].items(): 
+                if k in self.cam_list: 
+                    new_cams[k] = v
+        else: 
+            new_cams = sample['cams']
+        
         ego2img_rts = []
         ego2cam_rts = []
-        for c in sample['cams'].values():
+        for c in new_cams.values():
             extrinsic, intrinsic = np.array(
                 c['extrinsics']), np.array(c['intrinsics'])
 
@@ -133,11 +142,11 @@ class NuscDataset(BaseMapDataset):
         input_dict = {
             'location': location,
             'token': sample['token'],
-            'img_filenames': [c['img_fpath'] for c in sample['cams'].values()],
+            'img_filenames': [c['img_fpath'] for c in new_cams.values()],
             # intrinsics are 3x3 Ks
-            'cam_intrinsics': [c['intrinsics'] for c in sample['cams'].values()],
+            'cam_intrinsics': [c['intrinsics'] for c in new_cams.values()],
             # extrinsics are 4x4 tranform matrix, **ego2cam**
-            'cam_extrinsics': [c['extrinsics'] for c in sample['cams'].values()],
+            'cam_extrinsics': [c['extrinsics'] for c in new_cams.values()],
             'ego2img': ego2img_rts,
             'ego2cam': ego2cam_rts,
             'map_geoms': map_label2geom, # {0: List[ped_crossing(LineString)], 1: ...}

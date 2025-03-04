@@ -13,7 +13,6 @@ from shapely.geometry import Polygon, MultiPolygon, LineString, Point, box, Mult
 from shapely import affinity, ops
 import networkx as nx
 
-
 class NuscMapExtractor(object):
     """NuScenes map ground-truth extractor.
 
@@ -31,7 +30,7 @@ class NuscMapExtractor(object):
         for loc in self.MAPS:
             self.nusc_maps[loc] = NuScenesMap(
                 dataroot=data_root, map_name=loc)
-            self.map_explorer[loc] = CNuScenesMapExplorer(self.nusc_maps[loc])
+            self.map_explorer[loc] = CNuScenesMapExplorer(self.nusc_maps[loc]) # center line NuScenesMapExplorer
     
     def get_map_geom(self, 
                      location: str, 
@@ -52,7 +51,6 @@ class NuscMapExtractor(object):
             boundary=map_annos['boundary'], # List[LineString]
             drivable_area=[], # List[Polygon],
         )
-
 
 class VectorizedLocalMap(object):
     CLASS2LABEL = {
@@ -102,9 +100,9 @@ class VectorizedLocalMap(object):
         map_dict = {'divider':[],'ped_crossing':[],'boundary':[],'centerline':[]}
         vectors = []
 
-        for vec_class in self.vec_classes:
+        for vec_class in self.vec_classes: # ['divider', 'ped_crossing', 'boundary']
             if vec_class == 'divider':
-                line_geom = self.get_map_geom(patch_box, patch_angle, self.line_classes)
+                line_geom = self.get_map_geom(patch_box, patch_angle, self.line_classes) # self.line_classes ['road_divider', 'lane_divider']
                 line_instances_dict = self.line_geoms_to_instances(line_geom)     
                 for line_type, instances in line_instances_dict.items():
                     for instance in instances:
@@ -150,18 +148,18 @@ class VectorizedLocalMap(object):
                 map_geom.update(layer_centerline_dict)
         return map_geom
 
-    def get_map_geom(self, patch_box, patch_angle, layer_names):
+    def get_map_geom(self, patch_box, patch_angle, layer_names): # patch_box (134.4409706414419, 1064.1092451016577, 60, 30), 
         map_geom = {}
         for layer_name in layer_names:
-            if layer_name in self.line_classes:
+            if layer_name in self.line_classes: # ['road_divider', 'lane_divider']
                 geoms = self.get_divider_line(patch_box, patch_angle, layer_name)
                 # map_geom.append((layer_name, geoms))
                 map_geom[layer_name] = geoms
-            elif layer_name in self.polygon_classes:
+            elif layer_name in self.polygon_classes: # ['road_segment', 'lane']
                 geoms = self.get_contour_line(patch_box, patch_angle, layer_name)
                 # map_geom.append((layer_name, geoms))
                 map_geom[layer_name] = geoms
-            elif layer_name in self.ped_crossing_classes:
+            elif layer_name in self.ped_crossing_classes: # ['ped_crossing']
                 geoms = self.get_ped_crossing_line_stmmapnet(patch_box, patch_angle)
                 # map_geom.append((layer_name, geoms))
                 map_geom[layer_name] = geoms
@@ -180,7 +178,7 @@ class VectorizedLocalMap(object):
         patch = self.map_explorer.get_patch_coord(patch_box, patch_angle)
 
         line_list = []
-        records = getattr(self.map_explorer.map_api, layer_name)
+        records = getattr(self.map_explorer.map_api, layer_name) # self.map_explorer.map_api: <nuscenes.map_expansion.map_api.NuScenesMap object 
         for record in records:
             line = self.map_explorer.map_api.extract_line(record['line_token'])
             if line.is_empty:  # Skip lines without nodes.

@@ -17,6 +17,12 @@ from mmdet3d.models import build_model
 from mmdet_train import set_random_seed
 from mmdet.datasets import replace_ImageToTensor
 
+import sys 
+
+sys.path.append("/cluster/home/terjenf/maptracker/")
+sys.path.append("/cluster/home/terjenf/maptracker/plugin/")
+sys.path.append("/cluster/home/terjenf/maptracker/plugin/datasets/")
+
 
 def parse_args():
     parser = argparse.ArgumentParser(

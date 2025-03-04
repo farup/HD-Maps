@@ -9,6 +9,8 @@ plugin = True
 # plugin code dir
 plugin_dir = 'plugin/'
 []
+
+cam_list = False
 # img configs
 img_norm_cfg = dict(
     mean=[103.530, 116.280, 123.675], std=[1.0, 1.0, 1.0], to_rgb=False)
@@ -18,7 +20,7 @@ img_w = 800
 img_size = (img_h, img_w)
 num_cams = 6
 
-num_gpus = 8
+num_gpus = 1 # changed from 8
 batch_size = 3
 num_iters_per_epoch = 27846 // (num_gpus * batch_size)
 num_epochs = 18
@@ -115,6 +117,7 @@ model = dict(
             relu_before_extra_convs=True),
         transformer=dict(
             type='PerceptionTransformer',
+            num_cams = len(cam_list) if cam_list else 6,
             embed_dims=bev_embed_dims,
             encoder=dict(
                 type='BEVFormerEncoder',
@@ -131,6 +134,7 @@ model = dict(
                             num_levels=1),
                         dict(
                             type='SpatialCrossAttention',
+                            num_cams = len(cam_list) if cam_list else 6,
                             deformable_attention=dict(
                                 type='MSDeformableAttention3D',
                                 embed_dims=bev_embed_dims,
@@ -312,8 +316,8 @@ test_pipeline = [
 # DO NOT CHANGE
 eval_config = dict(
     type='NuscDataset',
-    data_root='data/nuscenes',
-    ann_file='data/nuscenes/nuscenes_map_infos_val_gt_tracks.pkl',
+    data_root='./datasets/nuscenes',
+    ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
     meta=meta,
     roi_size=roi_size,
     cat2id=cat2id,
@@ -343,8 +347,8 @@ eval_config = dict(
 
 match_config = dict(
     type='NuscDataset',
-    data_root='data/nuscenes',
-    ann_file='data/nuscenes/nuscenes_map_infos_val.pkl',
+    data_root='./datasets/nuscenes',
+    ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
     meta=meta,
     roi_size=roi_size,
     cat2id=cat2id,
@@ -378,8 +382,9 @@ data = dict(
     workers_per_gpu=8,
     train=dict(
         type='NuscDataset',
-        data_root='data/nuscenes',
-        ann_file='data/nuscenes/nuscenes_map_infos_train.pkl',
+        data_root='./datasets/nuscenes',
+        ann_file='./datasets/nuscenes/nuscenes_map_infos_train_newsplit.pkl',
+        cam_list=cam_list,
         meta=meta,
         roi_size=roi_size,
         cat2id=cat2id,
@@ -391,8 +396,9 @@ data = dict(
     ),
     val=dict(
         type='NuscDataset',
-        data_root='data/nuscenes',
-        ann_file='data/nuscenes/nuscenes_map_infos_val.pkl',
+        data_root='./datasets/nuscenes',
+        ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
+        cam_list=cam_list,
         meta=meta,
         roi_size=roi_size,
         cat2id=cat2id,
@@ -404,8 +410,9 @@ data = dict(
     ),
     test=dict(
         type='NuscDataset',
-        data_root='data/nuscenes',
-        ann_file='data/nuscenes/nuscenes_map_infos_val.pkl',
+        data_root='./datasets/nuscenes',
+        ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
+        cam_list=cam_list,
         meta=meta,
         roi_size=roi_size,
         cat2id=cat2id,
@@ -419,10 +426,13 @@ data = dict(
     nonshuffler_sampler=dict(type='DistributedSampler')
 )
 
+profile = False 
+profile_mem = False
+
 # optimizer
 optimizer = dict(
     type='AdamW',
-    lr=5e-4,
+    lr=5e-4, 
     paramwise_cfg=dict(
         custom_keys={
             'img_backbone': dict(lr_mult=0.1),
@@ -443,8 +453,11 @@ evaluation = dict(interval=num_epochs_interval*num_iters_per_epoch)
 find_unused_parameters = True #### when use checkpoint, find_unused_parameters must be False
 checkpoint_config = dict(interval=num_epochs_interval*num_iters_per_epoch)
 
+
+
 runner = dict(
-    type='MyRunnerWrapper', max_iters=num_epochs * num_iters_per_epoch)
+    type='MyRunnerWrapper', max_iters=num_epochs * num_iters_per_epoch) # added max_epochs
+
 
 log_config = dict(
     interval=50,

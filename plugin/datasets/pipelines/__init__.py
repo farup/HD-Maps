@@ -1,11 +1,11 @@
 from .loading import LoadMultiViewImagesFromFiles
 from .formating import FormatBundleMap
-from .transform import ResizeMultiViewImages, PadMultiViewImages, Normalize3D, PhotoMetricDistortionMultiViewImage
+from .transform import ResizeMultiViewImages,ResizeMultiViewImagesNapLab,  PadMultiViewImages, Normalize3D, PhotoMetricDistortionMultiViewImage
 from .rasterize import RasterizeMap, PV_Map
 from .vectorize import VectorizeMap
 
 __all__ = [
     'LoadMultiViewImagesFromFiles',
-    'FormatBundleMap', 'Normalize3D', 'ResizeMultiViewImages', 'PadMultiViewImages',
+    'FormatBundleMap', 'Normalize3D', 'ResizeMultiViewImages','ResizeMultiViewImagesNapLab', 'PadMultiViewImages',
     'RasterizeMap', 'PV_Map', 'VectorizeMap', 'PhotoMetricDistortionMultiViewImage'
 ]

@@ -5,6 +5,14 @@ import torch
 import numpy as np
 from shapely.geometry import LineString
 
+import sys
+
+sys.path.append("/cluster/home/terjenf/maptracker/")
+sys.path.append("/cluster/home/terjenf/maptracker/plugin/")
+sys.path.append("/cluster/home/terjenf/maptracker/plugin/datasets/")
+
+
+
 def import_plugin(cfg):
     '''
         import modules from plguin/xx, registry will be update

@@ -171,9 +171,10 @@ def custom_train_detector(model,
                                    cfg.get('momentum_config', None))
     
     # register profiler hook
-    #trace_config = dict(type='tb_trace', dir_name='work_dir')
-    #profiler_config = dict(on_trace_ready=trace_config)
-    #runner.register_profiler_hook(profiler_config)
+    if cfg.profile: 
+        trace_config = dict(type='tb_trace', dir_name=cfg.work_dir)
+        profiler_config = dict(on_trace_ready=trace_config, by_epoch=False, profile_memory=cfg.profile_mem, activities=["cuda"])
+        runner.register_profiler_hook(profiler_config)
     
     if distributed:
         if isinstance(runner, EpochBasedRunner):

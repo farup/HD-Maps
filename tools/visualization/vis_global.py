@@ -769,7 +769,7 @@ def plot_fig_merged_per_frame(num_frames, car_trajectory, x_min, x_max, y_min, y
         ax.set_ylim(y_min, y_max)
         
         # setup the figure with car
-        car_img = Image.open('resources/car-orange.png')
+        car_img = Image.open('/cluster/home/terjenf/maptracker/resources/car-orange.png')
         faded_rate = np.linspace(0.2, 1, num=len(car_trajectory))
         pre_center = car_trajectory[0][0]
 
@@ -889,7 +889,7 @@ def plot_fig_merged(car_trajectory, x_min, x_max, y_min, y_max, pred_save_path, 
     ax = fig.add_subplot(1, 1, 1)
     ax.set_xlim(x_min, x_max)
     ax.set_ylim(y_min, y_max)
-    car_img = Image.open('resources/car-orange.png')
+    car_img = Image.open('/cluster/home/terjenf/maptracker/resources/car-orange.png')
     
     faded_rate = np.linspace(0.2, 1, num=len(car_trajectory))
 
@@ -991,7 +991,7 @@ def plot_fig_unmerged_per_frame(num_frames, car_trajectory, x_min, x_max, y_min,
     ax = fig.add_subplot(1, 1, 1)
     ax.set_xlim(x_min, x_max)
     ax.set_ylim(y_min, y_max)
-    car_img = Image.open('resources/car-orange.png')
+    car_img = Image.open('/cluster/home/terjenf/maptracker/resources/car-orange.png')
 
 
     for frame_timestep in range(num_frames):
@@ -1050,7 +1050,7 @@ def plot_fig_unmerged(car_trajectory, x_min, x_max, y_min, y_max, pred_save_path
     ax = fig.add_subplot(1, 1, 1)
     ax.set_xlim(x_min, x_max)
     ax.set_ylim(y_min, y_max)
-    car_img = Image.open('resources/car-orange.png')
+    car_img = Image.open('/cluster/home/terjenf/maptracker/resources/car-orange.png')
     
     # trace the path reversely, get the sub-sampled traj for visualizing the car 
     pre_center = car_trajectory[-1][0]
@@ -1166,10 +1166,16 @@ def vis_pred_data(scene_name="", pred_results=None, origin=None, roi_size=None, 
     for index in index_list:
         
         vectors = np.array(pred_results[index]["vectors"]).reshape((len(np.array(pred_results[index]["vectors"])), 20, 2))
-        if abs(vectors.max()) <= 1:
-            curr_vectors = vectors * roi_size + origin
-        else:
-            curr_vectors = vectors
+        
+        # if index >= 16:
+        #     print("Stop")
+        
+        if len(vectors) > 0:
+            
+            if abs(vectors.max()) <= 1:
+                curr_vectors = vectors * roi_size + origin
+            else:
+                curr_vectors = vectors
             
         # get the transformation matrix of the last frame
         prev_e2g_trans =  torch.tensor(pred_results[index]['meta']['ego2global_translation'], dtype=torch.float64)
@@ -1185,6 +1191,8 @@ def vis_pred_data(scene_name="", pred_results=None, origin=None, roi_size=None, 
         curr_g2e_matrix[:3, 3] = -(curr_e2g_rot.T @ curr_e2g_trans)
         
         prev2curr_matrix = curr_g2e_matrix @ prev_e2g_matrix
+
+
         prev2curr_pred_vectors = get_prev2curr_vectors(curr_vectors, prev2curr_matrix,origin,roi_size,False,False)
         prev2curr_pred_vectors = prev2curr_pred_vectors * roi_size + origin
         
@@ -1220,7 +1228,7 @@ def vis_pred_data(scene_name="", pred_results=None, origin=None, roi_size=None, 
         all_points.append(points)
     all_points = np.concatenate(all_points, axis=0)
 
-    x_min = min(x_min, all_points[:,0].min())
+    x_min = max(min(x_min, all_points[:,0].min()), -100)
     x_max = max(x_max, all_points[:,0].max())
     y_min = min(y_min, all_points[:,1].min())
     y_max = max(y_max, all_points[:,1].max())
